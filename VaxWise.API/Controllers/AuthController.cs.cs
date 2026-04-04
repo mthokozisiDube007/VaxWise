@@ -6,7 +6,7 @@ namespace VaxWise.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : ControllerBase 
     {
         // Dependency injection of the authentication service
         private readonly IAuthService _authService;
@@ -15,6 +15,7 @@ namespace VaxWise.API.Controllers
         {
             _authService = authService;
         }
+
         // Register endpoint to create a new user account
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)

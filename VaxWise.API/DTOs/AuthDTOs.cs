@@ -1,6 +1,6 @@
 ﻿namespace VaxWise.API.DTOs
 {
-    // What the client sends when registering a new account
+
     public class RegisterDto
     {
         public string FullName { get; set; } = string.Empty;
