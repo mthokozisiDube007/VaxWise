@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaxWise.API.Data;
 
@@ -11,9 +12,11 @@ using VaxWise.API.Data;
 namespace VaxWise.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260405185043_FixCertificateForeignKey")]
+    partial class FixCertificateForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -169,61 +172,6 @@ namespace VaxWise.API.Migrations
                     b.ToTable("Certificates");
                 });
 
-            modelBuilder.Entity("VaxWise.API.Models.HealthRecord", b =>
-                {
-                    b.Property<int>("HealthRecordId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HealthRecordId"));
-
-                    b.Property<int>("AnimalId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Diagnosis")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Dosage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsUnderTreatment")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MedicationUsed")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Outcome")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecordType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Symptoms")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TreatmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("VetName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("HealthRecordId");
-
-                    b.HasIndex("AnimalId");
-
-                    b.ToTable("HealthRecords");
-                });
-
             modelBuilder.Entity("VaxWise.API.Models.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -340,17 +288,6 @@ namespace VaxWise.API.Migrations
                         .IsRequired();
 
                     b.Navigation("VaccinationEvent");
-                });
-
-            modelBuilder.Entity("VaxWise.API.Models.HealthRecord", b =>
-                {
-                    b.HasOne("VaxWise.API.Models.Animal", "Animal")
-                        .WithMany()
-                        .HasForeignKey("AnimalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Animal");
                 });
 
             modelBuilder.Entity("VaxWise.API.Models.VaccinationEvent", b =>

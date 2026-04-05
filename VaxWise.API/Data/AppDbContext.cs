@@ -12,6 +12,9 @@ namespace VaxWise.API.Data
         public DbSet<Animal> Animals { get; set; }
         public DbSet<AnimalType> AnimalTypes { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<VaccinationEvent> VaccinationEvents { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<HealthRecord> HealthRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
