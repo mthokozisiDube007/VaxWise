@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
@@ -19,6 +20,7 @@ builder.Services.AddScoped<IAnimalService, AnimalService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
+builder.Services.AddScoped<IFeedService, FeedService>();
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -40,11 +42,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Register role-based authorisation
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
-
+// Cors policy for frontend access
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("VaxWiseClient", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 // .NET 10 uses OpenApi + Scalar instead of Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+app.UseCors("VaxWiseClient");
 
 if (app.Environment.IsDevelopment())
 {
