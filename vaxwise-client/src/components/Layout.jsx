@@ -70,6 +70,12 @@ export default function Layout() {
           { to: '/animals', label: '🐄 Animals' },
           { to: '/vaccinations', label: '💉 Vaccinations' },
           { to: '/health', label: '🏥 Health' },
+          { to: '/feeding', label: '🌾 Feeding' },
+          { to: '/breeding', label: '🐣 Breeding' },
+          { to: '/financial', label: '💰 Financial' },
+          { to: '/certificates', label: '📜 Certificates' },
+          ...(hasRole('FarmOwner') || hasRole('Admin') ? [{ to: '/farms', label: '🏡 Farms' }] : []),
+          { to: '/settings', label: '⚙️ Settings' },
         ].map(({ to, label }) => (
           <NavLink key={to} to={to} end={to === '/'}
             style={({ isActive }) => ({
