@@ -4,13 +4,17 @@ const api = axios.create({
   baseURL: 'https://localhost:7232/api',
 });
 
-// Automatically attach JWT token to every request
-// This is the React equivalent of adding Bearer token in Postman
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('vaxwise_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const farmId = localStorage.getItem('vaxwise_farm_id');
+  if (farmId) {
+    config.headers['X-Farm-Id'] = farmId;
+  }
+
   return config;
 });
 
