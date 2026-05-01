@@ -1,5 +1,6 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace VaxWise.API.Helpers
 {
@@ -12,15 +13,19 @@ namespace VaxWise.API.Helpers
             string rfidTag,
             DateTime timestamp)
         {
-            // Concatenate all five fields into one payload string
-            // Order matters — changing the order changes the hash
-            var payload = $"{vaccineBatch}|{gpsCoordinates}|{savcNumber}|{rfidTag}|{timestamp:O}";
+            // JSON serialization avoids pipe-delimiter collision when field values contain '|'
+            var payload = JsonSerializer.Serialize(new
+            {
+                vaccineBatch,
+                gpsCoordinates,
+                savcNumber,
+                rfidTag,
+                timestamp = timestamp.ToString("O")
+            });
 
-            // Run the payload through SHA-256
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(payload));
 
-            // Convert the byte array to a readable hex string
             return BitConverter.ToString(bytes).Replace("-", "").ToLower();
         }
     }

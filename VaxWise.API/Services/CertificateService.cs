@@ -40,7 +40,7 @@ namespace VaxWise.API.Services
             var certificate = new Certificate
             {
                 EventId = eventId,
-                FarmerId = vacEvent.Animal.AnimalId,
+                FarmerId = vacEvent.FarmId,
                 AuditHash = vacEvent.AuditHash,
                 Status = "Valid",
                 IssuedAt = DateTime.UtcNow,

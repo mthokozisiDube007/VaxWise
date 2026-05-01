@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -11,10 +13,12 @@ namespace VaxWise.API.Controllers
     public class HealthController : ControllerBase
     {
         private readonly IHealthService _healthService;
+        private readonly AppDbContext _context;
 
-        public HealthController(IHealthService healthService)
+        public HealthController(IHealthService healthService, AppDbContext context)
         {
             _healthService = healthService;
+            _context = context;
         }
 
         // POST api/health/treatment — Vet only
@@ -23,7 +27,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> RecordTreatment(
             [FromBody] CreateHealthRecordDto dto)
         {
-            var result = await _healthService.RecordTreatmentAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _healthService.RecordTreatmentAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -31,7 +36,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("animal/{animalId}")]
         public async Task<IActionResult> GetAllRecords(int animalId)
         {
-            var records = await _healthService.GetAllRecordsAsync(animalId);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var records = await _healthService.GetAllRecordsAsync(animalId, farmId);
             return Ok(records);
         }
 
@@ -39,7 +45,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("current")]
         public async Task<IActionResult> GetAllCurrent()
         {
-            var records = await _healthService.GetAllCurrentAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var records = await _healthService.GetAllCurrentAsync(farmId);
             return Ok(records);
         }
 
@@ -48,7 +55,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> CheckOutbreak(
             [FromQuery] string symptoms)
         {
-            var alert = await _healthService.CheckOutbreaksAsync(symptoms);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var alert = await _healthService.CheckOutbreaksAsync(symptoms, farmId);
             return Ok(alert);
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
@@ -15,14 +15,14 @@ namespace VaxWise.API.Services
         }
 
         public async Task<FeedRecordResponseDto> RecordFeedConsumptionAsync(
-            CreateFeedRecordDto dto)
+            CreateFeedRecordDto dto, int farmId)
         {
-            // Calculate total cost
             var totalCost = (decimal)dto.QuantityKg * dto.CostPerKg;
 
             var record = new FeedRecord
             {
                 AnimalTypeId = dto.AnimalTypeId,
+                FarmId = farmId,
                 FeedType = dto.FeedType,
                 QuantityKg = dto.QuantityKg,
                 CostPerKg = dto.CostPerKg,
@@ -34,9 +34,8 @@ namespace VaxWise.API.Services
 
             _context.FeedRecords.Add(record);
 
-            // Deduct from stock automatically
             var stock = await _context.FeedStocks
-                .FirstOrDefaultAsync(f => f.FeedType == dto.FeedType);
+                .FirstOrDefaultAsync(f => f.FarmId == farmId && f.FeedType == dto.FeedType);
 
             if (stock != null)
             {
@@ -46,7 +45,6 @@ namespace VaxWise.API.Services
 
             await _context.SaveChangesAsync();
 
-            // Load animal type for response
             var animalType = await _context.AnimalTypes
                 .FirstOrDefaultAsync(a => a.AnimalTypeId == dto.AnimalTypeId);
 
@@ -64,17 +62,16 @@ namespace VaxWise.API.Services
         }
 
         public async Task<FeedStockResponseDto> UpdateFeedStockAsync(
-            UpdateFeedStockDto dto)
+            UpdateFeedStockDto dto, int farmId)
         {
-            // Check if stock entry exists for this feed type
             var stock = await _context.FeedStocks
-                .FirstOrDefaultAsync(f => f.FeedType == dto.FeedType);
+                .FirstOrDefaultAsync(f => f.FarmId == farmId && f.FeedType == dto.FeedType);
 
             if (stock == null)
             {
-                // First time this feed type is added
                 stock = new FeedStock
                 {
+                    FarmId = farmId,
                     FeedType = dto.FeedType,
                     CurrentStockKg = dto.QuantityKg,
                     CostPerKg = dto.CostPerKg,
@@ -85,7 +82,6 @@ namespace VaxWise.API.Services
             }
             else
             {
-                // Add to existing stock
                 stock.CurrentStockKg += dto.QuantityKg;
                 stock.CostPerKg = dto.CostPerKg;
                 stock.LowStockThresholdKg = dto.LowStockThresholdKg;
@@ -97,9 +93,10 @@ namespace VaxWise.API.Services
             return MapStockToDto(stock);
         }
 
-        public async Task<List<FeedStockResponseDto>> GetFeedStockLevelsAsync()
+        public async Task<List<FeedStockResponseDto>> GetFeedStockLevelsAsync(int farmId)
         {
             var stocks = await _context.FeedStocks
+                .Where(f => f.FarmId == farmId)
                 .OrderBy(f => f.FeedType)
                 .ToListAsync();
 
@@ -107,11 +104,11 @@ namespace VaxWise.API.Services
         }
 
         public async Task<List<FeedRecordResponseDto>> GetFeedRecordsAsync(
-            int animalTypeId)
+            int animalTypeId, int farmId)
         {
             var records = await _context.FeedRecords
                 .Include(f => f.AnimalType)
-                .Where(f => f.AnimalTypeId == animalTypeId)
+                .Where(f => f.FarmId == farmId && f.AnimalTypeId == animalTypeId)
                 .OrderByDescending(f => f.FeedDate)
                 .ToListAsync();
 
@@ -128,11 +125,10 @@ namespace VaxWise.API.Services
             }).ToList();
         }
 
-        public async Task<List<FeedStockResponseDto>> GetLowStockAlertsAsync()
+        public async Task<List<FeedStockResponseDto>> GetLowStockAlertsAsync(int farmId)
         {
-            // Returns only feed types below their threshold
             var lowStock = await _context.FeedStocks
-                .Where(f => f.CurrentStockKg <= f.LowStockThresholdKg)
+                .Where(f => f.FarmId == farmId && f.CurrentStockKg <= f.LowStockThresholdKg)
                 .ToListAsync();
 
             return lowStock.Select(MapStockToDto).ToList();

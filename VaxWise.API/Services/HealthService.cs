@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
@@ -15,19 +15,18 @@ namespace VaxWise.API.Services
         }
 
         public async Task<HealthRecordResponseDto> RecordTreatmentAsync(
-            CreateHealthRecordDto dto, int farm)
+            CreateHealthRecordDto dto, int farmId)
         {
-            // Find the animal
             var animal = await _context.Animals
-                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId && a.FarmId == );
+                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId && a.FarmId == farmId);
 
             if (animal == null)
                 throw new Exception("Animal not found");
 
-            // Create health record
             var record = new HealthRecord
             {
                 AnimalId = dto.AnimalId,
+                FarmId = farmId,
                 RecordType = dto.RecordType,
                 Symptoms = dto.Symptoms,
                 Diagnosis = dto.Diagnosis,
@@ -42,24 +41,21 @@ namespace VaxWise.API.Services
 
             _context.HealthRecords.Add(record);
 
-            // Flag animal as under treatment
-            // This prevents certificate generation while sick
             animal.Status = "UnderTreatment";
 
             await _context.SaveChangesAsync();
 
-            // After recording — check for outbreaks automatically
-            await CheckOutbreaksAsync(dto.Symptoms);
+            await CheckOutbreaksAsync(dto.Symptoms, farmId);
 
             return MapToResponseDto(record, animal.EarTagNumber);
         }
 
         public async Task<List<HealthRecordResponseDto>> GetAllRecordsAsync(
-            int animalId)
+            int animalId, int farmId)
         {
             var records = await _context.HealthRecords
                 .Include(h => h.Animal)
-                .Where(h => h.AnimalId == animalId)
+                .Where(h => h.AnimalId == animalId && h.FarmId == farmId)
                 .OrderByDescending(h => h.TreatmentDate)
                 .ToListAsync();
 
@@ -68,12 +64,11 @@ namespace VaxWise.API.Services
                 .ToList();
         }
 
-        public async Task<List<HealthRecordResponseDto>> GetAllCurrentAsync()
+        public async Task<List<HealthRecordResponseDto>> GetAllCurrentAsync(int farmId)
         {
-            // Returns all animals currently under treatment
             var records = await _context.HealthRecords
                 .Include(h => h.Animal)
-                .Where(h => h.IsUnderTreatment == true)
+                .Where(h => h.FarmId == farmId && h.IsUnderTreatment == true)
                 .OrderByDescending(h => h.TreatmentDate)
                 .ToListAsync();
 
@@ -82,19 +77,18 @@ namespace VaxWise.API.Services
                 .ToList();
         }
 
-        public async Task<OutbreakAlertDto?> CheckOutbreaksAsync(string symptoms)
+        public async Task<OutbreakAlertDto?> CheckOutbreaksAsync(string symptoms, int farmId)
         {
-            // Look for animals with similar symptoms in last 48 hours
             var fortyEightHoursAgo = DateTime.UtcNow.AddHours(-48);
 
             var recentRecords = await _context.HealthRecords
                 .Include(h => h.Animal)
                 .Where(h =>
+                    h.FarmId == farmId &&
                     h.Symptoms.Contains(symptoms) &&
                     h.TreatmentDate >= fortyEightHoursAgo)
                 .ToListAsync();
 
-            // Outbreak threshold — 3 or more animals
             if (recentRecords.Count < 3)
                 return new OutbreakAlertDto
                 {
@@ -106,7 +100,6 @@ namespace VaxWise.API.Services
                     DetectedAt = DateTime.UtcNow
                 };
 
-            // Outbreak detected — build alert
             var affectedEarTags = recentRecords
                 .Select(r => r.Animal.EarTagNumber)
                 .Distinct()

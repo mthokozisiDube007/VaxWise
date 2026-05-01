@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
@@ -15,24 +15,21 @@ namespace VaxWise.API.Services
         }
 
         public async Task<BreedingRecordResponseDto> RecordBreedingAsync(
-            CreateBreedingRecordDto dto)
+            CreateBreedingRecordDto dto, int farmId)
         {
-            // Load female animal with its type — need gestation days
             var femaleAnimal = await _context.Animals
                 .Include(a => a.AnimalType)
-                .FirstOrDefaultAsync(a => a.AnimalId == dto.FemaleAnimalId);
+                .FirstOrDefaultAsync(a => a.AnimalId == dto.FemaleAnimalId && a.FarmId == farmId);
 
             if (femaleAnimal == null)
                 throw new Exception("Female animal not found");
 
             var maleAnimal = await _context.Animals
-                .FirstOrDefaultAsync(a => a.AnimalId == dto.MaleAnimalId);
+                .FirstOrDefaultAsync(a => a.AnimalId == dto.MaleAnimalId && a.FarmId == farmId);
 
             if (maleAnimal == null)
                 throw new Exception("Male animal not found");
 
-            // Calculate expected birth date from gestation period
-            // Each animal type has its own gestation days seeded in AnimalTypes
             var gestationDays = femaleAnimal.AnimalType.GestationDays;
             var expectedBirthDate = dto.BreedingDate.AddDays(gestationDays);
 
@@ -58,13 +55,14 @@ namespace VaxWise.API.Services
         }
 
         public async Task<List<BreedingRecordResponseDto>> GetBreedingHistoryAsync(
-            int animalId)
+            int animalId, int farmId)
         {
             var records = await _context.BreedingRecords
                 .Include(b => b.FemaleAnimal).ThenInclude(a => a.AnimalType)
                 .Include(b => b.MaleAnimal)
-                .Where(b => b.FemaleAnimalId == animalId ||
-                            b.MaleAnimalId == animalId)
+                .Where(b =>
+                    b.FemaleAnimal.FarmId == farmId &&
+                    (b.FemaleAnimalId == animalId || b.MaleAnimalId == animalId))
                 .OrderByDescending(b => b.BreedingDate)
                 .ToListAsync();
 
@@ -75,10 +73,8 @@ namespace VaxWise.API.Services
                 r.FemaleAnimal.AnimalType.TypeName)).ToList();
         }
 
-        public async Task<List<BreedingRecordResponseDto>> GetUpcomingBirthsAsync()
+        public async Task<List<BreedingRecordResponseDto>> GetUpcomingBirthsAsync(int farmId)
         {
-            // Find all breeding records where birth is due in next 14 days
-            // New code — compare dates only, ignore time component
             var today = DateTime.UtcNow.Date;
             var fourteenDaysFromNow = today.AddDays(14);
 
@@ -86,11 +82,13 @@ namespace VaxWise.API.Services
                 .Include(b => b.FemaleAnimal).ThenInclude(a => a.AnimalType)
                 .Include(b => b.MaleAnimal)
                 .Where(b =>
+                    b.FemaleAnimal.FarmId == farmId &&
                     b.ExpectedBirthDate.Date <= fourteenDaysFromNow &&
                     b.ExpectedBirthDate.Date >= today &&
                     b.Status != "Delivered")
                 .OrderBy(b => b.ExpectedBirthDate)
                 .ToListAsync();
+
             return records.Select(r => MapToResponseDto(
                 r,
                 r.FemaleAnimal.EarTagNumber,
@@ -99,23 +97,23 @@ namespace VaxWise.API.Services
         }
 
         public async Task<BirthOutcomeResponseDto> RecordBirthOutcomeAsync(
-            int breedingRecordId, RecordBirthOutcomeDto dto)
+            int breedingRecordId, RecordBirthOutcomeDto dto, int farmId)
         {
             var record = await _context.BreedingRecords
                 .Include(b => b.FemaleAnimal).ThenInclude(a => a.AnimalType)
-                .FirstOrDefaultAsync(b => b.BreedingRecordId == breedingRecordId);
+                .FirstOrDefaultAsync(b =>
+                    b.BreedingRecordId == breedingRecordId &&
+                    b.FemaleAnimal.FarmId == farmId);
 
             if (record == null)
                 throw new Exception("Breeding record not found");
 
-            // Update breeding record with birth outcome
             record.NumberOfOffspring = dto.NumberOfOffspring;
             record.BirthWeightKg = dto.BirthWeightKg;
             record.SurvivalStatus = dto.SurvivalStatus;
             record.ActualBirthDate = dto.ActualBirthDate;
             record.Status = "Delivered";
 
-            // Automatically register each offspring as a new animal
             var offspringEarTags = new List<string>();
 
             for (int i = 1; i <= dto.NumberOfOffspring; i++)
@@ -126,10 +124,11 @@ namespace VaxWise.API.Services
                 {
                     EarTagNumber = earTag,
                     RfidTag = $"RFID-OFF-{record.BreedingRecordId}-{i}",
+                    FarmId = record.FemaleAnimal.FarmId,
                     AnimalTypeId = record.FemaleAnimal.AnimalTypeId,
                     Breed = record.FemaleAnimal.Breed,
                     DateOfBirth = dto.ActualBirthDate,
-                    Gender = "F", // default — can be updated later
+                    Gender = "F",
                     CurrentWeightKg = dto.BirthWeightKg,
                     PurchaseDate = dto.ActualBirthDate,
                     PurchasePrice = 0,

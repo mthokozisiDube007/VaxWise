@@ -9,12 +9,12 @@ namespace VaxWise.API.Services
         Task<VaccinationResponseDto> CaptureAsync(CreateVaccinationDto dto, string savcNumber,int  farmId);
 
         // Get all vaccination events for one animal
-        Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId);
+        Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId, int farmId);
 
         // Get all animals with vaccinations due in next 7 days
-        Task<List<VaccinationResponseDto>> GetUpcomingAsync();
+        Task<List<VaccinationResponseDto>> GetUpcomingAsync(int farmId);
 
         // Delta-Sync — process batch of offline captured events
-        Task<List<VaccinationResponseDto>> SyncAsync(SyncVaccinationsDto dto, string savcNumber);
+        Task<List<VaccinationResponseDto>> SyncAsync(SyncVaccinationsDto dto, string savcNumber, int farmId);
     }
 }

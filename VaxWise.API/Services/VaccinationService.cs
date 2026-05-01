@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Helpers;
@@ -18,20 +18,14 @@ namespace VaxWise.API.Services
         public async Task<VaccinationResponseDto> CaptureAsync(
             CreateVaccinationDto dto, string savcNumber, int farmId)
         {
-            // Step 1 — Find the animal to get its RFID tag
             var animal = await _context.Animals
                 .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId && a.FarmId == farmId);
-
 
             if (animal == null)
                 throw new Exception("Animal not found");
 
-            // Step 2 — Record the exact timestamp of this event
             var timestamp = DateTime.UtcNow;
 
-            // Step 3 — Generate the SHA-256 Audit-Lock hash
-            // This is the cryptographic proof that this event happened
-            // If anyone changes any of these five values — the hash breaks
             var auditHash = HashHelper.GenerateSha256(
                 dto.VaccineBatch,
                 dto.GpsCoordinates,
@@ -40,10 +34,10 @@ namespace VaxWise.API.Services
                 timestamp
             );
 
-            // Step 4 — Create the vaccination event record
             var vaccinationEvent = new VaccinationEvent
             {
                 AnimalId = dto.AnimalId,
+                FarmId = farmId,
                 SavcNumber = savcNumber,
                 VaccineBatch = dto.VaccineBatch,
                 VaccineName = dto.VaccineName,
@@ -59,8 +53,6 @@ namespace VaxWise.API.Services
 
             _context.VaccinationEvents.Add(vaccinationEvent);
 
-            // Step 5 — Update the animal's compliance score
-            // Every successful vaccination increases compliance score
             animal.ComplianceScore = Math.Min(animal.ComplianceScore + 20, 100);
 
             await _context.SaveChangesAsync();
@@ -68,11 +60,11 @@ namespace VaxWise.API.Services
             return MapToResponseDto(vaccinationEvent, animal.EarTagNumber);
         }
 
-        public async Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId)
+        public async Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId, int farmId)
         {
             var events = await _context.VaccinationEvents
                 .Include(v => v.Animal)
-                .Where(v => v.AnimalId == animalId)
+                .Where(v => v.AnimalId == animalId && v.FarmId == farmId)
                 .OrderByDescending(v => v.EventTimestamp)
                 .ToListAsync();
 
@@ -81,16 +73,16 @@ namespace VaxWise.API.Services
                 .ToList();
         }
 
-        public async Task<List<VaccinationResponseDto>> GetUpcomingAsync()
+        public async Task<List<VaccinationResponseDto>> GetUpcomingAsync(int farmId)
         {
-            // Find all vaccination events where NextDueDate 
-            // is within the next 7 days from today
             var sevenDaysFromNow = DateTime.UtcNow.AddDays(7);
 
             var events = await _context.VaccinationEvents
                 .Include(v => v.Animal)
-                .Where(v => v.NextDueDate <= sevenDaysFromNow
-                         && v.NextDueDate >= DateTime.UtcNow)
+                .Where(v =>
+                    v.FarmId == farmId &&
+                    v.NextDueDate <= sevenDaysFromNow &&
+                    v.NextDueDate >= DateTime.UtcNow)
                 .OrderBy(v => v.NextDueDate)
                 .ToListAsync();
 
@@ -100,28 +92,19 @@ namespace VaxWise.API.Services
         }
 
         public async Task<List<VaccinationResponseDto>> SyncAsync(
-            SyncVaccinationsDto dto, string savcNumber)
+            SyncVaccinationsDto dto, string savcNumber, int farmId)
         {
             var results = new List<VaccinationResponseDto>();
 
-            // Process events in timestamp order — oldest first
-            // This is the Delta-Sync Authority Hierarchy rule
-            var orderedEvents = dto.Events
-                .OrderBy(e => e.CaptureMode)
-                .ToList();
-
-            foreach (var eventDto in orderedEvents)
+            foreach (var eventDto in dto.Events)
             {
-                // Capture each offline event using the same
-                // CaptureAsync method — hash generated for each one
-                var result = await CaptureAsync(eventDto, savcNumber);
+                var result = await CaptureAsync(eventDto, savcNumber, farmId);
                 results.Add(result);
             }
 
             return results;
         }
 
-        // Private helper — maps VaccinationEvent to response DTO
         private static VaccinationResponseDto MapToResponseDto(
             VaccinationEvent v, string earTagNumber)
         {

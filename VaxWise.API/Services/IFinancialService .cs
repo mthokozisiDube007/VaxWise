@@ -1,33 +1,17 @@
-﻿using VaxWise.API.DTOs;
+using VaxWise.API.DTOs;
 
 namespace VaxWise.API.Services
 {
     public interface IFinancialService
     {
-        /// <summary>
-        /// Records income from an animal sale.
-        /// Updates animal status to Sold.
-        /// </summary>
-        Task<FinancialResponseDto> RecordIncomeAsync(CreateIncomeDto dto);
+        Task<FinancialResponseDto> RecordIncomeAsync(CreateIncomeDto dto, int farmId);
 
-        /// <summary>
-        /// Records a farm expense — feed, medication, vet fees etc.
-        /// </summary>
-        Task<FinancialResponseDto> RecordExpenseAsync(CreateExpenseDto dto);
+        Task<FinancialResponseDto> RecordExpenseAsync(CreateExpenseDto dto, int farmId);
 
-        /// <summary>
-        /// Returns monthly profit and loss summary.
-        /// </summary>
-        Task<ProfitLossDto> GetMonthlyProfitLossAsync(int month, int year);
+        Task<ProfitLossDto> GetMonthlyProfitLossAsync(int month, int year, int farmId);
 
-        /// <summary>
-        /// Returns all transactions — income and expenses.
-        /// </summary>
-        Task<List<FinancialResponseDto>> GetAllTransactionsAsync();
+        Task<List<FinancialResponseDto>> GetAllTransactionsAsync(int farmId);
 
-        /// <summary>
-        /// Calculates total cost of one animal from purchase to sale.
-        /// </summary>
-        Task<AnimalCostDto> GetAnimalCostAsync(int animalId);
+        Task<AnimalCostDto> GetAnimalCostAsync(int animalId, int farmId);
     }
 }

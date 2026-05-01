@@ -18,7 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add before builder.Build()
 builder.Services.AddRateLimiter(options =>
 {
-    // Strict limit on login — 5 attempts per minute per IP
+    // Strict limit on login ï¿½ 5 attempts per minute per IP
     options.AddFixedWindowLimiter("login", o =>
     {
         o.PermitLimit = 5;
@@ -27,7 +27,7 @@ builder.Services.AddRateLimiter(options =>
         o.QueueLimit = 0;
     });
 
-    // General API limit — 100 requests per minute per IP
+    // General API limit ï¿½ 100 requests per minute per IP
     options.AddFixedWindowLimiter("api", o =>
     {
         o.PermitLimit = 100;
@@ -143,6 +143,6 @@ app.Use(async (context, next) =>
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("api");
 
 app.Run();

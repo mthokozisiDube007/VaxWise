@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -12,10 +13,12 @@ namespace VaxWise.API.Controllers
     public class VaccinationsController : ControllerBase
     {
         private readonly IVaccinationService _vaccinationService;
+        private readonly AppDbContext _context;
 
-        public VaccinationsController(IVaccinationService vaccinationService)
+        public VaccinationsController(IVaccinationService vaccinationService, AppDbContext context)
         {
             _vaccinationService = vaccinationService;
+            _context = context;
         }
 
         // POST api/vaccinations/capture — Vet only
@@ -23,11 +26,10 @@ namespace VaxWise.API.Controllers
         [Authorize(Roles = "Vet")]
         public async Task<IActionResult> Capture([FromBody] CreateVaccinationDto dto)
         {
-            // Read SAVC number from the JWT token
-            // The vet cannot fake this — it comes from their verified token
             var savcNumber = User.FindFirst("SavcNumber")?.Value ?? string.Empty;
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
 
-            var result = await _vaccinationService.CaptureAsync(dto, savcNumber);
+            var result = await _vaccinationService.CaptureAsync(dto, savcNumber, farmId);
             return CreatedAtAction(nameof(GetByAnimalId),
                 new { animalId = result.AnimalId }, result);
         }
@@ -36,7 +38,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("animal/{animalId}")]
         public async Task<IActionResult> GetByAnimalId(int animalId)
         {
-            var events = await _vaccinationService.GetByAnimalIdAsync(animalId);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var events = await _vaccinationService.GetByAnimalIdAsync(animalId, farmId);
             return Ok(events);
         }
 
@@ -44,7 +47,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("upcoming")]
         public async Task<IActionResult> GetUpcoming()
         {
-            var events = await _vaccinationService.GetUpcomingAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var events = await _vaccinationService.GetUpcomingAsync(farmId);
             return Ok(events);
         }
 
@@ -54,8 +58,9 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> Sync([FromBody] SyncVaccinationsDto dto)
         {
             var savcNumber = User.FindFirst("SavcNumber")?.Value ?? string.Empty;
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
 
-            var results = await _vaccinationService.SyncAsync(dto, savcNumber);
+            var results = await _vaccinationService.SyncAsync(dto, savcNumber, farmId);
             return Ok(results);
         }
     }

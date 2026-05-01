@@ -13,17 +13,17 @@ namespace VaxWise.API.Services
         /// <summary>
         /// Returns all health records for one animal.
         /// </summary>
-        Task<List<HealthRecordResponseDto>> GetAllRecordsAsync(int animalId);
+        Task<List<HealthRecordResponseDto>> GetAllRecordsAsync(int animalId, int farmId);
 
         /// <summary>
         /// Returns all animals currently under treatment.
         /// </summary>
-        Task<List<HealthRecordResponseDto>> GetAllCurrentAsync();
+        Task<List<HealthRecordResponseDto>> GetAllCurrentAsync(int farmId);
 
         /// <summary>
         /// Checks for outbreaks — fires alert if 3 or more animals
         /// show similar symptoms within 48 hours.
         /// </summary>
-        Task<OutbreakAlertDto?> CheckOutbreaksAsync(string symptoms);
+        Task<OutbreakAlertDto?> CheckOutbreaksAsync(string symptoms, int farmId);
     }
 }

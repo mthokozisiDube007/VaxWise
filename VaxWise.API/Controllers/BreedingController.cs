@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -11,10 +13,12 @@ namespace VaxWise.API.Controllers
     public class BreedingController : ControllerBase
     {
         private readonly IBreedingService _breedingService;
+        private readonly AppDbContext _context;
 
-        public BreedingController(IBreedingService breedingService)
+        public BreedingController(IBreedingService breedingService, AppDbContext context)
         {
             _breedingService = breedingService;
+            _context = context;
         }
 
         // POST api/breeding — FarmOwner, Manager
@@ -23,7 +27,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> RecordBreeding(
             [FromBody] CreateBreedingRecordDto dto)
         {
-            var result = await _breedingService.RecordBreedingAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _breedingService.RecordBreedingAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -31,8 +36,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("animal/{animalId}")]
         public async Task<IActionResult> GetBreedingHistory(int animalId)
         {
-            var records = await _breedingService
-                .GetBreedingHistoryAsync(animalId);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var records = await _breedingService.GetBreedingHistoryAsync(animalId, farmId);
             return Ok(records);
         }
 
@@ -40,7 +45,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("upcoming")]
         public async Task<IActionResult> GetUpcomingBirths()
         {
-            var records = await _breedingService.GetUpcomingBirthsAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var records = await _breedingService.GetUpcomingBirthsAsync(farmId);
             return Ok(records);
         }
 
@@ -51,8 +57,8 @@ namespace VaxWise.API.Controllers
             int breedingRecordId,
             [FromBody] RecordBirthOutcomeDto dto)
         {
-            var result = await _breedingService
-                .RecordBirthOutcomeAsync(breedingRecordId, dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _breedingService.RecordBirthOutcomeAsync(breedingRecordId, dto, farmId);
             return Ok(result);
         }
     }

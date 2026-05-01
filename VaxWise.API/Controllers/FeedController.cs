@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -11,10 +13,12 @@ namespace VaxWise.API.Controllers
     public class FeedController : ControllerBase
     {
         private readonly IFeedService _feedService;
+        private readonly AppDbContext _context;
 
-        public FeedController(IFeedService feedService)
+        public FeedController(IFeedService feedService, AppDbContext context)
         {
             _feedService = feedService;
+            _context = context;
         }
 
         // POST api/feed/record — FarmOwner, Manager, Worker
@@ -23,7 +27,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> RecordFeed(
             [FromBody] CreateFeedRecordDto dto)
         {
-            var result = await _feedService.RecordFeedConsumptionAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _feedService.RecordFeedConsumptionAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -33,7 +38,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> UpdateStock(
             [FromBody] UpdateFeedStockDto dto)
         {
-            var result = await _feedService.UpdateFeedStockAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _feedService.UpdateFeedStockAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -41,7 +47,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("stock")]
         public async Task<IActionResult> GetStockLevels()
         {
-            var result = await _feedService.GetFeedStockLevelsAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _feedService.GetFeedStockLevelsAsync(farmId);
             return Ok(result);
         }
 
@@ -49,7 +56,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("records/{animalTypeId}")]
         public async Task<IActionResult> GetFeedRecords(int animalTypeId)
         {
-            var result = await _feedService.GetFeedRecordsAsync(animalTypeId);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _feedService.GetFeedRecordsAsync(animalTypeId, farmId);
             return Ok(result);
         }
 
@@ -57,7 +65,8 @@ namespace VaxWise.API.Controllers
         [HttpGet("alerts")]
         public async Task<IActionResult> GetLowStockAlerts()
         {
-            var result = await _feedService.GetLowStockAlertsAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _feedService.GetLowStockAlertsAsync(farmId);
             return Ok(result);
         }
     }

@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -11,10 +13,12 @@ namespace VaxWise.API.Controllers
     public class FinancialController : ControllerBase
     {
         private readonly IFinancialService _financialService;
+        private readonly AppDbContext _context;
 
-        public FinancialController(IFinancialService financialService)
+        public FinancialController(IFinancialService financialService, AppDbContext context)
         {
             _financialService = financialService;
+            _context = context;
         }
 
         // POST api/financial/income — FarmOwner only
@@ -23,7 +27,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> RecordIncome(
             [FromBody] CreateIncomeDto dto)
         {
-            var result = await _financialService.RecordIncomeAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _financialService.RecordIncomeAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -33,7 +38,8 @@ namespace VaxWise.API.Controllers
         public async Task<IActionResult> RecordExpense(
             [FromBody] CreateExpenseDto dto)
         {
-            var result = await _financialService.RecordExpenseAsync(dto);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _financialService.RecordExpenseAsync(dto, farmId);
             return Ok(result);
         }
 
@@ -44,8 +50,8 @@ namespace VaxWise.API.Controllers
             [FromQuery] int month,
             [FromQuery] int year)
         {
-            var result = await _financialService
-                .GetMonthlyProfitLossAsync(month, year);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _financialService.GetMonthlyProfitLossAsync(month, year, farmId);
             return Ok(result);
         }
 
@@ -54,7 +60,8 @@ namespace VaxWise.API.Controllers
         [Authorize(Roles = "FarmOwner")]
         public async Task<IActionResult> GetAllTransactions()
         {
-            var result = await _financialService.GetAllTransactionsAsync();
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _financialService.GetAllTransactionsAsync(farmId);
             return Ok(result);
         }
 
@@ -63,7 +70,8 @@ namespace VaxWise.API.Controllers
         [Authorize(Roles = "FarmOwner")]
         public async Task<IActionResult> GetAnimalCost(int animalId)
         {
-            var result = await _financialService.GetAnimalCostAsync(animalId);
+            var farmId = await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+            var result = await _financialService.GetAnimalCostAsync(animalId, farmId);
             return Ok(result);
         }
     }

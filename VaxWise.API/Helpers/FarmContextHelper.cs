@@ -30,8 +30,11 @@ namespace VaxWise.API.Helpers
             }
 
             // Workers and Vets get their FarmId from their assignment
-            var userId = int.Parse(user.FindFirst(
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value);
+            var userIdClaim = user.FindFirst(
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                throw new UnauthorizedAccessException("Invalid user context.");
 
             var worker = await context.FarmWorkers
                 .FirstOrDefaultAsync(fw =>
