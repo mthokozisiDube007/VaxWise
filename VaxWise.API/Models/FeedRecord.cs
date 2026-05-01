@@ -25,5 +25,6 @@ namespace VaxWise.API.Models
 
         [ForeignKey("AnimalTypeId")]
         public AnimalType AnimalType { get; set; } = null!;
+        public int FarmId { get; set; }
     }
 }

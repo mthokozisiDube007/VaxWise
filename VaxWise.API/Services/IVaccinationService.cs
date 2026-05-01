@@ -1,11 +1,12 @@
 ﻿using VaxWise.API.DTOs;
+using VaxWise.API.Models;
 
 namespace VaxWise.API.Services
 {
     public interface IVaccinationService
     {
         // Capture a single vaccination event — generates SHA-256 hash
-        Task<VaccinationResponseDto> CaptureAsync(CreateVaccinationDto dto, string savcNumber);
+        Task<VaccinationResponseDto> CaptureAsync(CreateVaccinationDto dto, string savcNumber,int  farmId);
 
         // Get all vaccination events for one animal
         Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId);

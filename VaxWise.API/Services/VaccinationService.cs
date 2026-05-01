@@ -16,11 +16,12 @@ namespace VaxWise.API.Services
         }
 
         public async Task<VaccinationResponseDto> CaptureAsync(
-            CreateVaccinationDto dto, string savcNumber)
+            CreateVaccinationDto dto, string savcNumber, int farmId)
         {
             // Step 1 — Find the animal to get its RFID tag
             var animal = await _context.Animals
-                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId);
+                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId && a.FarmId == farmId);
+
 
             if (animal == null)
                 throw new Exception("Animal not found");

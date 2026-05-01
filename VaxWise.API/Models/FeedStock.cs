@@ -7,6 +7,7 @@ namespace VaxWise.API.Models
     {
         [Key]
         public int FeedStockId { get; set; }
+        public int FarmId { get; set; }
 
         public string FeedType { get; set; } = string.Empty;
         public double CurrentStockKg { get; set; }

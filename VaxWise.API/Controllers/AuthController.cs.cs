@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using VaxWise.API.DTOs;
 using VaxWise.API.Services;
+
 
 namespace VaxWise.API.Controllers
 {
@@ -18,6 +20,7 @@ namespace VaxWise.API.Controllers
 
         // Register endpoint to create a new user account
         [HttpPost("register")]
+        [EnableRateLimiting("api")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
@@ -30,6 +33,7 @@ namespace VaxWise.API.Controllers
         }
         // Login endpoint to authenticate users and return a JWT token
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             var result = await _authService.LoginAsync(dto);
@@ -40,5 +44,8 @@ namespace VaxWise.API.Controllers
 
             return Ok(result);
         }
+
+
     }
+
 }

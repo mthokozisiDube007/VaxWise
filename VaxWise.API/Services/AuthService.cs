@@ -7,30 +7,39 @@ using System.Text;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
-
+using Microsoft.Extensions.Logging;
 namespace VaxWise.API.Services
 {
     public class AuthService : IAuthService
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly ILogger<AuthService> _logger;
 
         // Dependency injection - the context and config are provided by .NET 10
-        public AuthService(AppDbContext context, IConfiguration config)
+        public AuthService(
+         AppDbContext context,
+         IConfiguration config,
+         ILogger<AuthService> logger)
         {
             _context = context;
             _config = config;
+            _logger = logger;
         }
 
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
         {
-            // Check if email already exists - we never want duplicate accounts
+            // Only FarmOwner can self-register
+            // All other roles must be invited by a FarmOwner
+            if (dto.Role != "FarmOwner" && dto.Role != "Admin")
+                throw new Exception(
+                    "Only Farm Owners can self-register. Workers must be invited by a Farm Owner.");
+
             bool emailExists = await _context.Users
                 .AnyAsync(u => u.Email == dto.Email);
 
             if (emailExists) return null;
 
-            // Hash the password using BCrypt before saving - NEVER store plain text
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var user = new User
@@ -40,27 +49,38 @@ namespace VaxWise.API.Services
                 PasswordHash = passwordHash,
                 Role = dto.Role,
                 SavcNumber = dto.SavcNumber,
-
-                // Vets need admin verification before their signing rights activate
-                IsVerified = dto.Role != "Vet"
+                IsVerified = true,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // After registering, immediately log them in by generating a token
             return GenerateTokenResponse(user);
         }
 
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
-            // Find user by email
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            // If no user found, or password does not match the stored hash, reject
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            if (user == null ||
+                !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            {
+                // Log failed login attempt — security event
+                _logger.LogWarning(
+                    "Failed login attempt for email {Email} at {Time}",
+                    dto.Email,
+                    DateTime.UtcNow);
+
                 return null;
+            }
+            // Log successful login
+            _logger.LogInformation(
+                "Successful login for user {UserId} with role {Role} at {Time}",
+                user.UserId,
+                user.Role,
+                DateTime.UtcNow);
 
             return GenerateTokenResponse(user);
         }

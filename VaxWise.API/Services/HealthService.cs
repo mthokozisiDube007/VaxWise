@@ -15,11 +15,11 @@ namespace VaxWise.API.Services
         }
 
         public async Task<HealthRecordResponseDto> RecordTreatmentAsync(
-            CreateHealthRecordDto dto)
+            CreateHealthRecordDto dto, int farm)
         {
             // Find the animal
             var animal = await _context.Animals
-                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId);
+                .FirstOrDefaultAsync(a => a.AnimalId == dto.AnimalId && a.FarmId == );
 
             if (animal == null)
                 throw new Exception("Animal not found");

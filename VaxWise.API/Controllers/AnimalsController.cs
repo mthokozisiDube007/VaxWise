@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VaxWise.API.Data;
 using VaxWise.API.DTOs;
+using VaxWise.API.Helpers;
 using VaxWise.API.Services;
 
 namespace VaxWise.API.Controllers
@@ -11,65 +13,61 @@ namespace VaxWise.API.Controllers
     public class AnimalsController : ControllerBase
     {
         private readonly IAnimalService _animalService;
+        private readonly AppDbContext _context;
 
-        public AnimalsController(IAnimalService animalService)
+        public AnimalsController(IAnimalService animalService, AppDbContext context)
         {
             _animalService = animalService;
+            _context = context;
         }
 
-        // GET api/animals — any logged in user
+        private async Task<int> GetFarmId() =>
+            await FarmContextHelper.GetActiveFarmIdAsync(User, Request, _context);
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var animals = await _animalService.GetAllAsync();
-            return Ok(animals);
+            var farmId = await GetFarmId();
+            var result = await _animalService.GetAllAsync(farmId);
+            return Ok(result);
         }
 
-        // GET api/animals/5 — any logged in user
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var animal = await _animalService.GetByIdAsync(id);
-
-            if (animal == null)
-                return NotFound(new { message = "Animal not found" });
-
-            return Ok(animal);
+            var farmId = await GetFarmId();
+            var result = await _animalService.GetByIdAsync(id, farmId);
+            if (result == null) return NotFound(new { message = "Animal not found" });
+            return Ok(result);
         }
 
-        // POST api/animals — FarmOwner and FarmManager only
         [HttpPost]
         [Authorize(Roles = "FarmOwner,FarmManager")]
         public async Task<IActionResult> Create([FromBody] CreateAnimalDto dto)
         {
-            var animal = await _animalService.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = animal.AnimalId }, animal);
+            var farmId = await GetFarmId();
+            var result = await _animalService.CreateAsync(dto, farmId);
+            return CreatedAtAction(nameof(GetById), new { id = result.AnimalId }, result);
         }
 
-        // PUT api/animals/5 — FarmOwner and FarmManager only
         [HttpPut("{id}")]
         [Authorize(Roles = "FarmOwner,FarmManager")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateAnimalDto dto)
         {
-            var animal = await _animalService.UpdateAsync(id, dto);
-
-            if (animal == null)
-                return NotFound(new { message = "Animal not found" });
-
-            return Ok(animal);
+            var farmId = await GetFarmId();
+            var result = await _animalService.UpdateAsync(id, dto, farmId);
+            if (result == null) return NotFound(new { message = "Animal not found" });
+            return Ok(result);
         }
 
-        // DELETE api/animals/5 — Admin only
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _animalService.DeleteAsync(id);
-
-            if (!result)
-                return NotFound(new { message = "Animal not found" });
-
-            return Ok(new { message = "Animal deleted successfully" });
+            var farmId = await GetFarmId();
+            var result = await _animalService.DeleteAsync(id, farmId);
+            if (!result) return NotFound(new { message = "Animal not found" });
+            return Ok(new { message = "Animal deleted" });
         }
     }
 }

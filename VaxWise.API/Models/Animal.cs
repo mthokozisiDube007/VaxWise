@@ -5,7 +5,8 @@ namespace VaxWise.API.Models
     public class Animal
     {
         public int AnimalId { get; set; }
-
+        // Add this field
+        public int FarmId { get; set; }
         // Unique ear tag number printed on the physical tag
         public string EarTagNumber { get; set; } = string.Empty;
 
@@ -38,5 +39,8 @@ namespace VaxWise.API.Models
 
         // Navigation property - gives you access to the AnimalType object
         public AnimalType AnimalType { get; set; } = null!;
+        // Add this navigation property
+        [ForeignKey("FarmId")]
+        public Farm Farm { get; set; } = null!;
     }
 }

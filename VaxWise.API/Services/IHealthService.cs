@@ -8,7 +8,7 @@ namespace VaxWise.API.Services
         /// Records a treatment for a specific animal.
         /// Flags animal as under treatment.
         /// </summary>
-        Task<HealthRecordResponseDto> RecordTreatmentAsync(CreateHealthRecordDto dto);
+        Task<HealthRecordResponseDto> RecordTreatmentAsync(CreateHealthRecordDto dto,int farmId);
 
         /// <summary>
         /// Returns all health records for one animal.

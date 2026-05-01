@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaxWise.API.Data;
 
@@ -11,9 +12,11 @@ using VaxWise.API.Data;
 namespace VaxWise.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412085053_AddFarmWorkerInvitation")]
+    partial class AddFarmWorkerInvitation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,9 +56,6 @@ namespace VaxWise.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -77,8 +77,6 @@ namespace VaxWise.API.Migrations
                     b.HasKey("AnimalId");
 
                     b.HasIndex("AnimalTypeId");
-
-                    b.HasIndex("FarmId");
 
                     b.ToTable("Animals");
                 });
@@ -326,9 +324,6 @@ namespace VaxWise.API.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("FeedDate")
                         .HasColumnType("datetime2");
 
@@ -350,8 +345,6 @@ namespace VaxWise.API.Migrations
 
                     b.HasIndex("AnimalTypeId");
 
-                    b.HasIndex("FarmId");
-
                     b.ToTable("FeedRecords");
                 });
 
@@ -369,9 +362,6 @@ namespace VaxWise.API.Migrations
                     b.Property<double>("CurrentStockKg")
                         .HasColumnType("float");
 
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
                     b.Property<string>("FeedType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -383,8 +373,6 @@ namespace VaxWise.API.Migrations
                         .HasColumnType("float");
 
                     b.HasKey("FeedStockId");
-
-                    b.HasIndex("FarmId");
 
                     b.ToTable("FeedStocks");
                 });
@@ -418,9 +406,6 @@ namespace VaxWise.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -435,8 +420,6 @@ namespace VaxWise.API.Migrations
                     b.HasKey("FinancialId");
 
                     b.HasIndex("AnimalId");
-
-                    b.HasIndex("FarmId");
 
                     b.ToTable("Financials");
                 });
@@ -462,9 +445,6 @@ namespace VaxWise.API.Migrations
                     b.Property<string>("Dosage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsUnderTreatment")
                         .HasColumnType("bit");
@@ -495,8 +475,6 @@ namespace VaxWise.API.Migrations
                     b.HasKey("HealthRecordId");
 
                     b.HasIndex("AnimalId");
-
-                    b.HasIndex("FarmId");
 
                     b.ToTable("HealthRecords");
                 });
@@ -567,9 +545,6 @@ namespace VaxWise.API.Migrations
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
                     b.Property<string>("GpsCoordinates")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -596,8 +571,6 @@ namespace VaxWise.API.Migrations
                     b.HasKey("EventId");
 
                     b.HasIndex("AnimalId");
-
-                    b.HasIndex("FarmId");
 
                     b.ToTable("VaccinationEvents");
                 });
@@ -659,15 +632,7 @@ namespace VaxWise.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("VaxWise.API.Models.Farm", "Farm")
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.Navigation("AnimalType");
-
-                    b.Navigation("Farm");
                 });
 
             modelBuilder.Entity("VaxWise.API.Models.BreedingRecord", b =>
@@ -738,22 +703,7 @@ namespace VaxWise.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("VaxWise.API.Models.Farm", null)
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.Navigation("AnimalType");
-                });
-
-            modelBuilder.Entity("VaxWise.API.Models.FeedStock", b =>
-                {
-                    b.HasOne("VaxWise.API.Models.Farm", null)
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("VaxWise.API.Models.Financial", b =>
@@ -761,12 +711,6 @@ namespace VaxWise.API.Migrations
                     b.HasOne("VaxWise.API.Models.Animal", "Animal")
                         .WithMany()
                         .HasForeignKey("AnimalId");
-
-                    b.HasOne("VaxWise.API.Models.Farm", null)
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
 
                     b.Navigation("Animal");
                 });
@@ -779,12 +723,6 @@ namespace VaxWise.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("VaxWise.API.Models.Farm", null)
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.Navigation("Animal");
                 });
 
@@ -794,12 +732,6 @@ namespace VaxWise.API.Migrations
                         .WithMany()
                         .HasForeignKey("AnimalId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("VaxWise.API.Models.Farm", null)
-                        .WithMany()
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Animal");

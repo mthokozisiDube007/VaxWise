@@ -39,5 +39,6 @@ namespace VaxWise.API.Models
 
         // Navigation property
         public Animal Animal { get; set; } = null!;
+        public int FarmId { get; set; }
     }
 }
