@@ -76,6 +76,7 @@ namespace VaxWise.API.Services
         public async Task<List<VaccinationResponseDto>> GetByAnimalIdAsync(int animalId, int farmId)
         {
             var events = await _context.VaccinationEvents
+                .AsNoTracking()
                 .Include(v => v.Animal)
                 .Where(v => v.AnimalId == animalId && v.FarmId == farmId)
                 .OrderByDescending(v => v.EventTimestamp)
@@ -91,6 +92,7 @@ namespace VaxWise.API.Services
             var sevenDaysFromNow = DateTime.UtcNow.AddDays(7);
 
             var events = await _context.VaccinationEvents
+                .AsNoTracking()
                 .Include(v => v.Animal)
                 .Where(v =>
                     v.FarmId == farmId &&

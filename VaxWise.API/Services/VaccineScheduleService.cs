@@ -34,6 +34,7 @@ namespace VaxWise.API.Services
             string vaccineName, int animalTypeId)
         {
             var schedule = await _context.VaccineSchedules
+                .AsNoTracking()
                 .FirstOrDefaultAsync(vs =>
                     vs.VaccineName == vaccineName &&
                     vs.AnimalTypeId == animalTypeId);

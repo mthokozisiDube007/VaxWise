@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
@@ -14,8 +14,7 @@ namespace VaxWise.API.Services
             _context = context;
         }
 
-        public async Task<AnimalResponseDto> CreateAsync(
-         CreateAnimalDto dto, int farmId)
+        public async Task<AnimalResponseDto> CreateAsync(CreateAnimalDto dto, int farmId)
         {
             var animal = new Animal
             {
@@ -28,7 +27,7 @@ namespace VaxWise.API.Services
                 CurrentWeightKg = dto.CurrentWeightKg,
                 PurchaseDate = dto.PurchaseDate,
                 PurchasePrice = dto.PurchasePrice,
-                FarmId = farmId,  // ← stamp FarmId on creation
+                FarmId = farmId,
                 Status = "Active",
                 ComplianceScore = 0,
                 CreatedAt = DateTime.UtcNow
@@ -36,41 +35,42 @@ namespace VaxWise.API.Services
 
             _context.Animals.Add(animal);
             await _context.SaveChangesAsync();
-            return await MapToResponseDto(animal);
+
+            // Reload with AnimalType included so mapping doesn't need lazy loading
+            var created = await _context.Animals
+                .AsNoTracking()
+                .Include(a => a.AnimalType)
+                .FirstAsync(a => a.AnimalId == animal.AnimalId);
+
+            return MapToResponseDto(created);
         }
 
         public async Task<List<AnimalResponseDto>> GetAllAsync(int farmId)
         {
             var animals = await _context.Animals
+                .AsNoTracking()
                 .Include(a => a.AnimalType)
-                .Where(a => a.FarmId == farmId)  // ← filter by farm
+                .Where(a => a.FarmId == farmId)
                 .ToListAsync();
 
-            return animals
-                .Select(a => MapToResponseDto(a).Result)
-                .ToList();
+            return animals.Select(MapToResponseDto).ToList();
         }
 
         public async Task<AnimalResponseDto?> GetByIdAsync(int id, int farmId)
         {
             var animal = await _context.Animals
+                .AsNoTracking()
                 .Include(a => a.AnimalType)
-                .FirstOrDefaultAsync(a =>
-                    a.AnimalId == id &&
-                    a.FarmId == farmId);  // ← ensure animal belongs to this farm
+                .FirstOrDefaultAsync(a => a.AnimalId == id && a.FarmId == farmId);
 
-            if (animal == null) return null;
-            return await MapToResponseDto(animal);
+            return animal == null ? null : MapToResponseDto(animal);
         }
 
-        public async Task<AnimalResponseDto?> UpdateAsync(
-            int id, UpdateAnimalDto dto, int farmId)
+        public async Task<AnimalResponseDto?> UpdateAsync(int id, UpdateAnimalDto dto, int farmId)
         {
             var animal = await _context.Animals
                 .Include(a => a.AnimalType)
-                .FirstOrDefaultAsync(a =>
-                    a.AnimalId == id &&
-                    a.FarmId == farmId);  // ← security check
+                .FirstOrDefaultAsync(a => a.AnimalId == id && a.FarmId == farmId);
 
             if (animal == null) return null;
 
@@ -80,15 +80,13 @@ namespace VaxWise.API.Services
             if (dto.Status != null) animal.Status = dto.Status;
 
             await _context.SaveChangesAsync();
-            return await MapToResponseDto(animal);
+            return MapToResponseDto(animal);
         }
 
         public async Task<bool> DeleteAsync(int id, int farmId)
         {
             var animal = await _context.Animals
-                .FirstOrDefaultAsync(a =>
-                    a.AnimalId == id &&
-                    a.FarmId == farmId);  // ← security check
+                .FirstOrDefaultAsync(a => a.AnimalId == id && a.FarmId == farmId);
 
             if (animal == null) return false;
 
@@ -97,35 +95,22 @@ namespace VaxWise.API.Services
             return true;
         }
 
-
-        // Private helper — maps Animal model to AnimalResponseDto
-        // Private because only AnimalService needs this — Encapsulation
-        private async Task<AnimalResponseDto> MapToResponseDto(Animal animal)
+        // AnimalType must be eagerly loaded by all callers via .Include(a => a.AnimalType)
+        private static AnimalResponseDto MapToResponseDto(Animal animal) => new()
         {
-            // Load AnimalType if not already loaded
-            if (animal.AnimalType == null)
-            {
-                await _context.Entry(animal)
-                    .Reference(a => a.AnimalType)
-                    .LoadAsync();
-            }
-
-            return new AnimalResponseDto
-            {
-                AnimalId = animal.AnimalId,
-                EarTagNumber = animal.EarTagNumber,
-                RfidTag = animal.RfidTag,
-                AnimalTypeName = animal.AnimalType?.TypeName ?? "Unknown",
-                Breed = animal.Breed,
-                DateOfBirth = animal.DateOfBirth,
-                Gender = animal.Gender,
-                CurrentWeightKg = animal.CurrentWeightKg,
-                PurchaseDate = animal.PurchaseDate,
-                PurchasePrice = animal.PurchasePrice,
-                Status = animal.Status,
-                ComplianceScore = animal.ComplianceScore,
-                CreatedAt = animal.CreatedAt
-            };
-        }
+            AnimalId = animal.AnimalId,
+            EarTagNumber = animal.EarTagNumber,
+            RfidTag = animal.RfidTag,
+            AnimalTypeName = animal.AnimalType?.TypeName ?? "Unknown",
+            Breed = animal.Breed,
+            DateOfBirth = animal.DateOfBirth,
+            Gender = animal.Gender,
+            CurrentWeightKg = animal.CurrentWeightKg,
+            PurchaseDate = animal.PurchaseDate,
+            PurchasePrice = animal.PurchasePrice,
+            Status = animal.Status,
+            ComplianceScore = animal.ComplianceScore,
+            CreatedAt = animal.CreatedAt
+        };
     }
 }

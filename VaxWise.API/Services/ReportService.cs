@@ -23,12 +23,14 @@ namespace VaxWise.API.Services
             var now = DateTime.UtcNow;
 
             var farm = await _context.Farms
+                .AsNoTracking()
                 .Include(f => f.Owner)
                 .FirstOrDefaultAsync(f => f.FarmId == farmId);
 
             if (farm == null) return null;
 
             var recentRecords = await _context.HealthRecords
+                .AsNoTracking()
                 .Include(h => h.Animal)
                     .ThenInclude(a => a.AnimalType)
                 .Where(h => h.FarmId == farmId && h.TreatmentDate >= now.AddHours(-48))
@@ -39,6 +41,7 @@ namespace VaxWise.API.Services
             int totalAnimals = await _context.Animals.CountAsync(a => a.FarmId == farmId);
 
             var notifiableDiseases = await _context.VaccineSchedules
+                .AsNoTracking()
                 .Where(vs => vs.IsNotifiable && vs.NotifiableDiseaseName != null)
                 .Select(vs => new { vs.VaccineName, DiseaseName = vs.NotifiableDiseaseName!, vs.ReportingWindowHours })
                 .Distinct()

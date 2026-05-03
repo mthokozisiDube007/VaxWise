@@ -42,7 +42,7 @@ export default function HealthPage() {
 
   const recordMut = useMutation({
     mutationFn: recordTreatment,
-    onSuccess: () => { qc.invalidateQueries(['health-current']); setForm(EMPTY_FORM); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['health-current'] }); setForm(EMPTY_FORM); },
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 

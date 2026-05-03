@@ -30,13 +30,13 @@ export default function AnimalsPage() {
   const createMutation = useMutation({
     mutationFn: createAnimal,
     onSuccess: () => {
-      queryClient.invalidateQueries(['animals']);
+      queryClient.invalidateQueries({ queryKey: ['animals'] });
       setShowForm(false);
       setForm({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
     },
   });
 
-  const deleteMutation = useMutation({ mutationFn: deleteAnimal, onSuccess: () => queryClient.invalidateQueries(['animals']) });
+  const deleteMutation = useMutation({ mutationFn: deleteAnimal, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['animals'] }) });
 
   if (isLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading animals…</div>

@@ -77,6 +77,7 @@ namespace VaxWise.API.Services
         public async Task<List<CertificateResponseDto>> GetByFarmerAsync(int farmerId)
         {
             var certificates = await _context.Certificates
+                .AsNoTracking()
                 .Include(c => c.VaccinationEvent)
                 .ThenInclude(v => v.Animal)
                 .Where(c => c.FarmerId == farmerId)

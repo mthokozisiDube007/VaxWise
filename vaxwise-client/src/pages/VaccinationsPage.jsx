@@ -48,8 +48,8 @@ export default function VaccinationsPage() {
     mutationFn: captureVaccination,
     onSuccess: (data) => {
       setAuditHash(data.auditHash);
-      qc.invalidateQueries(['upcoming']);
-      qc.invalidateQueries(['dashboard']);
+      qc.invalidateQueries({ queryKey: ['upcoming'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       setForm(EMPTY_FORM);
     },
   });

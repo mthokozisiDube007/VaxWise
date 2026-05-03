@@ -54,6 +54,7 @@ namespace VaxWise.API.Services
             int animalId, int farmId)
         {
             var records = await _context.HealthRecords
+                .AsNoTracking()
                 .Include(h => h.Animal)
                 .Where(h => h.AnimalId == animalId && h.FarmId == farmId)
                 .OrderByDescending(h => h.TreatmentDate)
@@ -67,6 +68,7 @@ namespace VaxWise.API.Services
         public async Task<List<HealthRecordResponseDto>> GetAllCurrentAsync(int farmId)
         {
             var records = await _context.HealthRecords
+                .AsNoTracking()
                 .Include(h => h.Animal)
                 .Where(h => h.FarmId == farmId && h.IsUnderTreatment)
                 .OrderByDescending(h => h.TreatmentDate)
@@ -82,6 +84,7 @@ namespace VaxWise.API.Services
             var fortyEightHoursAgo = DateTime.UtcNow.AddHours(-48);
 
             var recentRecords = await _context.HealthRecords
+                .AsNoTracking()
                 .Include(h => h.Animal)
                 .Where(h => h.FarmId == farmId && h.TreatmentDate >= fortyEightHoursAgo)
                 .ToListAsync();
@@ -91,6 +94,7 @@ namespace VaxWise.API.Services
 
             // Feature 2 — load notifiable disease keywords from schedule library
             var notifiableDiseases = await _context.VaccineSchedules
+                .AsNoTracking()
                 .Where(vs => vs.IsNotifiable && vs.NotifiableDiseaseName != null)
                 .Select(vs => new
                 {

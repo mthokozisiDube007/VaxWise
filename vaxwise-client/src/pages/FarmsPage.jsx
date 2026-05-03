@@ -29,9 +29,9 @@ export default function FarmsPage() {
   const { data: farms = [] } = useQuery({ queryKey: ['farms'], queryFn: getFarms });
   const { data: workers = [] } = useQuery({ queryKey: ['workers', selectedFarmId], queryFn: () => getFarmWorkers(selectedFarmId), enabled: !!selectedFarmId });
 
-  const createMut = useMutation({ mutationFn: createFarm, onSuccess: () => { qc.invalidateQueries(['farms']); setShowCreateFarm(false); setFarmForm(EMPTY_FARM); } });
-  const inviteMut = useMutation({ mutationFn: inviteWorker, onSuccess: (data) => { setInviteLink(data.invitationLink || ''); setInviteForm(EMPTY_INVITE); qc.invalidateQueries(['workers', selectedFarmId]); } });
-  const removeMut = useMutation({ mutationFn: removeWorker, onSuccess: () => qc.invalidateQueries(['workers', selectedFarmId]) });
+  const createMut = useMutation({ mutationFn: createFarm, onSuccess: () => { qc.invalidateQueries({ queryKey: ['farms'] }); setShowCreateFarm(false); setFarmForm(EMPTY_FARM); } });
+  const inviteMut = useMutation({ mutationFn: inviteWorker, onSuccess: (data) => { setInviteLink(data.invitationLink || ''); setInviteForm(EMPTY_INVITE); qc.invalidateQueries({ queryKey: ['workers', selectedFarmId] }); } });
+  const removeMut = useMutation({ mutationFn: removeWorker, onSuccess: () => qc.invalidateQueries({ queryKey: ['workers', selectedFarmId] }) });
 
   const setF = (k, v) => setFarmForm(f => ({ ...f, [k]: v }));
   const setI = (k, v) => setInviteForm(f => ({ ...f, [k]: v }));
