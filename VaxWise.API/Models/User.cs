@@ -21,5 +21,9 @@
         public bool IsVerified { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Password reset — token is stored as SHA-256 hash; expires after 15 minutes
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
     }
 }

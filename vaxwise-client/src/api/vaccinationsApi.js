@@ -19,3 +19,8 @@ export const syncVaccinations = async (data) => {
   const r = await api.post('/vaccinations/sync', data);
   return r.data;
 };
+
+export const getVaccineSchedules = async (animalTypeId) => {
+  const r = await api.get(`/vaccineschedules?animalTypeId=${animalTypeId}`);
+  return r.data;
+};

@@ -23,8 +23,8 @@ namespace VaxWise.API.DTOs
         [Required]
         public string GpsCoordinates { get; set; } = string.Empty;
 
-        [Required]
-        public DateTime NextDueDate { get; set; }
+        // Optional — auto-calculated from Vaccine Schedule Library if omitted
+        public DateTime? NextDueDate { get; set; }
 
         // Online or Offline
         public string CaptureMode { get; set; } = "Online";
@@ -44,6 +44,16 @@ namespace VaxWise.API.DTOs
         public DateTime NextDueDate { get; set; }
         public string CaptureMode { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+    }
+
+    public class VaccineScheduleDto
+    {
+        public int VaccineScheduleId { get; init; }
+        public string VaccineName { get; init; } = string.Empty;
+        public int IntervalDays { get; init; }
+        public bool IsNotifiable { get; init; }
+        public string? NotifiableDiseaseName { get; init; }
+        public int ReportingWindowHours { get; init; }
     }
 
     // For Delta-Sync — batch of offline events the vet sends when back online

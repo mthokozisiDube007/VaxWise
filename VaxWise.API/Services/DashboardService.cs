@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using VaxWise.API.Algorithms;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 
@@ -17,12 +18,8 @@ namespace VaxWise.API.Services
         {
             var now = DateTime.UtcNow;
             var sevenDaysFromNow = now.AddDays(7);
-            var fourteenDaysFromNow = now.AddDays(14);
-            var today = now.Date;
-            var currentMonth = now.Month;
-            var currentYear = now.Year;
+            var twelveMonthsAgo = now.AddMonths(-12);
 
-            // All queries now filter by farmId
             var animals = await _context.Animals
                 .Where(a => a.FarmId == farmId)
                 .ToListAsync();
@@ -38,38 +35,55 @@ namespace VaxWise.API.Services
             var currentlyUnderTreatment = await _context.HealthRecords
                 .CountAsync(h => h.FarmId == farmId && h.IsUnderTreatment);
 
-            var recentSymptoms = await _context.HealthRecords
-                .Where(h =>
-                    h.FarmId == farmId &&
-                    h.TreatmentDate >= now.AddHours(-48))
-                .GroupBy(h => h.Symptoms)
-                .Where(g => g.Count() >= 3)
-                .AnyAsync();
-
-            var lowStockItems = await _context.FeedStocks
-                .Where(f =>
-                    f.FarmId == farmId &&
-                    f.CurrentStockKg <= f.LowStockThresholdKg)
+            // Outbreak: check 48h window using the smart engine
+            var recentHealthRecords = await _context.HealthRecords
+                .Include(h => h.Animal)
+                .Where(h => h.FarmId == farmId && h.TreatmentDate >= now.AddHours(-48))
                 .ToListAsync();
 
-            var upcomingBirths = await _context.BreedingRecords
-                .Include(b => b.FemaleAnimal)
-                .CountAsync(b =>
-                    b.FemaleAnimal.FarmId == farmId &&
-                    b.ExpectedBirthDate.Date <= fourteenDaysFromNow &&
-                    b.ExpectedBirthDate.Date >= today &&
-                    b.Status != "Delivered");
-
-            var monthlyTransactions = await _context.Financials
-                .Where(f =>
-                    f.FarmId == farmId &&
-                    f.TransactionDate.Month == currentMonth &&
-                    f.TransactionDate.Year == currentYear)
+            // Feature 2 — load notifiable disease keywords
+            var notifiableDiseases = await _context.VaccineSchedules
+                .Where(vs => vs.IsNotifiable && vs.NotifiableDiseaseName != null)
+                .Select(vs => new { vs.VaccineName, DiseaseName = vs.NotifiableDiseaseName!, vs.ReportingWindowHours })
+                .Distinct()
                 .ToListAsync();
 
-            var totalIncome = monthlyTransactions.Where(t => t.TransactionType == "Income").Sum(t => t.Amount);
-            var totalExpenses = monthlyTransactions.Where(t => t.TransactionType == "Expense").Sum(t => t.Amount);
-            var netProfit = totalIncome - totalExpenses;
+            var notifiableList = notifiableDiseases
+                .Select(d => (d.VaccineName, d.DiseaseName, d.ReportingWindowHours))
+                .ToList<(string Keyword, string DiseaseName, int ReportingWindowHours)>();
+
+            bool activeOutbreak = false;
+            bool notifiableDiseaseDetected = false;
+            string? notifiableDiseaseName = null;
+            DateTime? dalrrdDeadline = null;
+
+            if (recentHealthRecords.Count >= 3)
+            {
+                var mostReported = recentHealthRecords
+                    .GroupBy(h => h.Symptoms)
+                    .OrderByDescending(g => g.Count())
+                    .First();
+
+                var records = recentHealthRecords
+                    .Select(r => (r, r.Animal.EarTagNumber))
+                    .ToList();
+
+                var alert = OutbreakDetectionEngine.Analyse(
+                    mostReported.Key, records, animals.Count, notifiableList);
+
+                activeOutbreak          = alert.OutbreakDetected;
+                notifiableDiseaseDetected = alert.IsNotifiable;
+                notifiableDiseaseName   = alert.NotifiableDiseaseName;
+                dalrrdDeadline          = alert.DalrrdReportDeadline;
+            }
+
+            // Feature 3 — count animals with active withdrawal periods
+            var activeHealthRecords = await _context.HealthRecords
+                .Where(h => h.FarmId == farmId && h.WithdrawalDays > 0)
+                .ToListAsync();
+
+            int animalsUnderWithdrawal = activeHealthRecords
+                .Count(h => WithdrawalPeriodCalculator.IsActive(h.TreatmentDate, h.WithdrawalDays, now));
 
             var totalCertificates = await _context.Certificates
                 .Include(c => c.VaccinationEvent)
@@ -78,24 +92,75 @@ namespace VaxWise.API.Services
             var totalVaccinations = await _context.VaccinationEvents
                 .CountAsync(v => v.FarmId == farmId);
 
+            // --- Vaccination coverage intelligence ---
+
+            var allVaccinationEvents = await _context.VaccinationEvents
+                .Where(v => v.FarmId == farmId)
+                .ToListAsync();
+
+            // Latest event per animal (in-memory — safe for typical farm sizes)
+            var latestEventByAnimal = allVaccinationEvents
+                .GroupBy(v => v.AnimalId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(v => v.EventTimestamp).First());
+
+            var animalIds = animals.Select(a => a.AnimalId).ToHashSet();
+
+            int overdueVaccinationsCount = animalIds
+                .Count(id => latestEventByAnimal.TryGetValue(id, out var ev)
+                             && ev.NextDueDate < now);
+
+            int neverVaccinatedCount = animalIds
+                .Count(id => !latestEventByAnimal.ContainsKey(id));
+
+            // % of animals vaccinated at least once in the last 12 months
+            var vaccinatedLast12Months = allVaccinationEvents
+                .Where(v => v.EventTimestamp >= twelveMonthsAgo)
+                .Select(v => v.AnimalId)
+                .Distinct()
+                .Count();
+
+            double coverageRate = animals.Count > 0
+                ? Math.Round((double)vaccinatedLast12Months / animals.Count * 100, 1)
+                : 0;
+
+            // --- Farm risk score ---
+            int avgCompliance = animals.Count > 0
+                ? (int)animals.Average(a => a.ComplianceScore)
+                : 0;
+
+            int quarantinedCount = animals.Count(a => a.Status == "Quarantined");
+            int underTreatmentCount = animals.Count(a => a.Status == "UnderTreatment");
+
+            var (riskScore, riskLevel) = RiskScoreEngine.Compute(
+                totalAnimals: animals.Count,
+                overdueVaccinations: overdueVaccinationsCount,
+                neverVaccinated: neverVaccinatedCount,
+                underTreatment: underTreatmentCount,
+                quarantined: quarantinedCount,
+                activeOutbreak: activeOutbreak,
+                averageComplianceScore: avgCompliance);
+
             return new DashboardDto
             {
                 TotalAnimals = animals.Count,
                 ActiveAnimals = animals.Count(a => a.Status == "Active"),
-                AnimalsUnderTreatment = animals.Count(a => a.Status == "UnderTreatment"),
-                QuarantinedAnimals = animals.Count(a => a.Status == "Quarantined"),
-                AverageComplianceScore = animals.Count > 0 ? (int)animals.Average(a => a.ComplianceScore) : 0,
+                AnimalsUnderTreatment = underTreatmentCount,
+                QuarantinedAnimals = quarantinedCount,
+                AverageComplianceScore = avgCompliance,
                 UpcomingVaccinationsCount = upcomingVaccinations.Count,
-                UpcomingVaccinationEarTags = upcomingVaccinations.Select(v => v.Animal.EarTagNumber).ToList(),
+                UpcomingVaccinationEarTags = upcomingVaccinations
+                    .Select(v => v.Animal.EarTagNumber).ToList(),
                 AnimalsCurrentlyUnderTreatment = currentlyUnderTreatment,
-                ActiveOutbreakDetected = recentSymptoms,
-                LowStockAlertCount = lowStockItems.Count,
-                LowStockFeedTypes = lowStockItems.Select(f => f.FeedType).ToList(),
-                UpcomingBirthsCount = upcomingBirths,
-                TotalIncomeThisMonth = totalIncome,
-                TotalExpensesThisMonth = totalExpenses,
-                NetProfitThisMonth = netProfit,
-                IsProfitableThisMonth = netProfit > 0,
+                ActiveOutbreakDetected = activeOutbreak,
+                NotifiableDiseaseDetected = notifiableDiseaseDetected,
+                NotifiableDiseaseName = notifiableDiseaseName,
+                DalrrdReportDeadline = dalrrdDeadline,
+                AnimalsUnderWithdrawal = animalsUnderWithdrawal,
+                OverdueVaccinationsCount = overdueVaccinationsCount,
+                NeverVaccinatedCount = neverVaccinatedCount,
+                VaccinationCoverageRate = coverageRate,
+                FarmRiskScore = riskScore,
+                FarmRiskLevel = riskLevel,
                 TotalCertificatesIssued = totalCertificates,
                 TotalVaccinationEvents = totalVaccinations,
                 GeneratedAt = now

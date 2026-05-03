@@ -47,11 +47,9 @@ builder.Services.AddScoped<IAnimalService, AnimalService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
-builder.Services.AddScoped<IFeedService, FeedService>();
-builder.Services.AddScoped<IBreedingService, BreedingService>();
-builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFarmService, FarmService>();
+builder.Services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

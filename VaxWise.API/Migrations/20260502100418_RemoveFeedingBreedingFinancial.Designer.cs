@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaxWise.API.Data;
 
@@ -11,9 +12,11 @@ using VaxWise.API.Data;
 namespace VaxWise.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260502100418_RemoveFeedingBreedingFinancial")]
+    partial class RemoveFeedingBreedingFinancial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -305,9 +308,6 @@ namespace VaxWise.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("WithdrawalDays")
-                        .HasColumnType("int");
-
                     b.HasKey("HealthRecordId");
 
                     b.HasIndex("AnimalId");
@@ -342,12 +342,6 @@ namespace VaxWise.API.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordResetToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("PasswordResetTokenExpiry")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -422,199 +416,6 @@ namespace VaxWise.API.Migrations
                     b.HasIndex("FarmId");
 
                     b.ToTable("VaccinationEvents");
-                });
-
-            modelBuilder.Entity("VaxWise.API.Models.VaccineSchedule", b =>
-                {
-                    b.Property<int>("VaccineScheduleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VaccineScheduleId"));
-
-                    b.Property<int>("AnimalTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IntervalDays")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsNotifiable")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("NotifiableDiseaseName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReportingWindowHours")
-                        .HasColumnType("int");
-
-                    b.Property<string>("VaccineName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("VaccineScheduleId");
-
-                    b.HasIndex("AnimalTypeId");
-
-                    b.ToTable("VaccineSchedules");
-
-                    b.HasData(
-                        new
-                        {
-                            VaccineScheduleId = 1,
-                            AnimalTypeId = 1,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Foot-and-Mouth Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "FMD Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 2,
-                            AnimalTypeId = 1,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Brucellosis",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Brucellosis Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 3,
-                            AnimalTypeId = 1,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Anthrax",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Anthrax Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 4,
-                            AnimalTypeId = 1,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Lumpy Skin Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Lumpy Skin Disease Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 5,
-                            AnimalTypeId = 1,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Bluetongue",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Bluetongue Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 6,
-                            AnimalTypeId = 1,
-                            IntervalDays = 365,
-                            IsNotifiable = false,
-                            ReportingWindowHours = 24,
-                            VaccineName = "Blackleg Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 7,
-                            AnimalTypeId = 2,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Foot-and-Mouth Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "FMD Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 8,
-                            AnimalTypeId = 2,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Anthrax",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Anthrax Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 9,
-                            AnimalTypeId = 2,
-                            IntervalDays = 365,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Bluetongue",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Bluetongue Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 10,
-                            AnimalTypeId = 2,
-                            IntervalDays = 365,
-                            IsNotifiable = false,
-                            ReportingWindowHours = 24,
-                            VaccineName = "Pasteurellosis Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 11,
-                            AnimalTypeId = 3,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Foot-and-Mouth Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "FMD Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 12,
-                            AnimalTypeId = 3,
-                            IntervalDays = 365,
-                            IsNotifiable = false,
-                            ReportingWindowHours = 24,
-                            VaccineName = "Pasteurellosis Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 13,
-                            AnimalTypeId = 4,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Foot-and-Mouth Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "FMD Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 14,
-                            AnimalTypeId = 4,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "African Swine Fever",
-                            ReportingWindowHours = 24,
-                            VaccineName = "African Swine Fever Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 15,
-                            AnimalTypeId = 5,
-                            IntervalDays = 42,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Newcastle Disease",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Newcastle Disease Vaccine"
-                        },
-                        new
-                        {
-                            VaccineScheduleId = 16,
-                            AnimalTypeId = 5,
-                            IntervalDays = 180,
-                            IsNotifiable = true,
-                            NotifiableDiseaseName = "Highly Pathogenic Avian Influenza",
-                            ReportingWindowHours = 24,
-                            VaccineName = "Avian Influenza Vaccine"
-                        });
                 });
 
             modelBuilder.Entity("VaxWise.API.Models.WorkerInvitation", b =>
@@ -758,17 +559,6 @@ namespace VaxWise.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Animal");
-                });
-
-            modelBuilder.Entity("VaxWise.API.Models.VaccineSchedule", b =>
-                {
-                    b.HasOne("VaxWise.API.Models.AnimalType", "AnimalType")
-                        .WithMany()
-                        .HasForeignKey("AnimalTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("AnimalType");
                 });
 
             modelBuilder.Entity("VaxWise.API.Models.WorkerInvitation", b =>

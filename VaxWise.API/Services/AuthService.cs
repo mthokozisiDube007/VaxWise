@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
@@ -83,6 +83,71 @@ namespace VaxWise.API.Services
                 DateTime.UtcNow);
 
             return GenerateTokenResponse(user);
+        }
+
+        public async Task<string?> GeneratePasswordResetTokenAsync(string email)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            // Return null-like response even if user not found — prevents email enumeration
+            if (user == null) return string.Empty;
+
+            // Generate 32 cryptographically random bytes → URL-safe Base64 token
+            var rawBytes = RandomNumberGenerator.GetBytes(32);
+            var rawToken = Convert.ToBase64String(rawBytes)
+                .Replace("+", "-").Replace("/", "_").Replace("=", "");
+
+            // Store only the SHA-256 hash — never the raw token
+            var tokenHash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+
+            user.PasswordResetToken = tokenHash;
+            user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Password reset token generated for user {UserId} — expires at {Expiry}",
+                user.UserId,
+                user.PasswordResetTokenExpiry);
+
+            // In production: email rawToken to the user. Here we return it directly.
+            return rawToken;
+        }
+
+        public async Task<bool> ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            var tokenHash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(dto.Token)));
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u =>
+                    u.PasswordResetToken == tokenHash &&
+                    u.PasswordResetTokenExpiry > DateTime.UtcNow);
+
+            if (user == null)
+            {
+                _logger.LogWarning(
+                    "Password reset failed — invalid or expired token at {Time}",
+                    DateTime.UtcNow);
+                return false;
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+            // Invalidate the token immediately after use — single-use only
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Password successfully reset for user {UserId} at {Time}",
+                user.UserId,
+                DateTime.UtcNow);
+
+            return true;
         }
 
         private AuthResponseDto GenerateTokenResponse(User user)

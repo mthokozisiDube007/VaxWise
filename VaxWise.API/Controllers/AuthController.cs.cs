@@ -38,14 +38,39 @@ namespace VaxWise.API.Controllers
         {
             var result = await _authService.LoginAsync(dto);
 
-            // If LoginAsync returned null, credentials were invalid
             if (result == null)
                 return Unauthorized(new { message = "Invalid email or password." });
 
             return Ok(result);
         }
 
+        // Step 1: request a password reset token (15-minute expiry)
+        [HttpPost("forgot-password")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var token = await _authService.GeneratePasswordResetTokenAsync(dto.Email);
 
+            // Always return 200 — never reveal whether the email exists
+            return Ok(new
+            {
+                message = "If that email is registered, a reset token has been issued.",
+                resetToken = token  // In production: remove this and email the token instead
+            });
+        }
+
+        // Step 2: submit the token + new password to complete the reset
+        [HttpPost("reset-password")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var success = await _authService.ResetPasswordAsync(dto);
+
+            if (!success)
+                return BadRequest(new { message = "Reset token is invalid or has expired." });
+
+            return Ok(new { message = "Password reset successfully. Please log in." });
+        }
     }
 
 }

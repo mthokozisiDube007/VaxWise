@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using VaxWise.API.Algorithms;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Helpers;
@@ -34,6 +35,10 @@ namespace VaxWise.API.Services
                 timestamp
             );
 
+            // Feature 1 — auto-calculate NextDueDate from schedule library if not supplied
+            DateTime nextDueDate = dto.NextDueDate ?? await ResolveNextDueDateAsync(
+                dto.VaccineName, animal.AnimalTypeId, timestamp);
+
             var vaccinationEvent = new VaccinationEvent
             {
                 AnimalId = dto.AnimalId,
@@ -46,14 +51,22 @@ namespace VaxWise.API.Services
                 GpsCoordinates = dto.GpsCoordinates,
                 EventTimestamp = timestamp,
                 AuditHash = auditHash,
-                NextDueDate = dto.NextDueDate,
+                NextDueDate = nextDueDate,
                 CaptureMode = dto.CaptureMode,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.VaccinationEvents.Add(vaccinationEvent);
+            await _context.SaveChangesAsync();
 
-            animal.ComplianceScore = Math.Min(animal.ComplianceScore + 20, 100);
+            // Recalculate compliance score from full vaccination history
+            var allEvents = await _context.VaccinationEvents
+                .Where(v => v.AnimalId == dto.AnimalId && v.FarmId == farmId)
+                .OrderBy(v => v.EventTimestamp)
+                .ToListAsync();
+
+            animal.ComplianceScore = ComplianceScoreCalculator.Calculate(
+                allEvents, animal.Status, DateTime.UtcNow);
 
             await _context.SaveChangesAsync();
 
@@ -103,6 +116,19 @@ namespace VaxWise.API.Services
             }
 
             return results;
+        }
+
+        private async Task<DateTime> ResolveNextDueDateAsync(
+            string vaccineName, int animalTypeId, DateTime eventTimestamp)
+        {
+            var schedule = await _context.VaccineSchedules
+                .FirstOrDefaultAsync(vs =>
+                    vs.VaccineName == vaccineName &&
+                    vs.AnimalTypeId == animalTypeId);
+
+            return schedule != null
+                ? eventTimestamp.AddDays(schedule.IntervalDays)
+                : eventTimestamp.AddDays(180); // safe default: 6 months
         }
 
         private static VaccinationResponseDto MapToResponseDto(

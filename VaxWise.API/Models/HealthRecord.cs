@@ -24,6 +24,9 @@ namespace VaxWise.API.Models
         // True while animal is receiving treatment
         public bool IsUnderTreatment { get; set; } = true;
 
+        // Days before the animal can be sold or slaughtered after treatment
+        public int WithdrawalDays { get; set; } = 0;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [ForeignKey("AnimalId")]

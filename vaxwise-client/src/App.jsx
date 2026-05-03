@@ -5,9 +5,6 @@ import DashboardPage from './pages/DashboardPage';
 import AnimalsPage from './pages/AnimalsPage';
 import VaccinationsPage from './pages/VaccinationsPage';
 import HealthPage from './pages/HealthPage';
-import FeedingPage from './pages/FeedingPage';
-import BreedingPage from './pages/BreedingPage';
-import FinancialPage from './pages/FinancialPage';
 import CertificatesPage from './pages/CertificatesPage';
 import FarmsPage from './pages/FarmsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -31,9 +28,6 @@ export default function App() {
         <Route path="animals" element={<AnimalsPage />} />
         <Route path="vaccinations" element={<VaccinationsPage />} />
         <Route path="health" element={<HealthPage />} />
-        <Route path="feeding" element={<FeedingPage />} />
-        <Route path="breeding" element={<BreedingPage />} />
-        <Route path="financial" element={<FinancialPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
         <Route path="farms" element={<FarmsPage />} />
         <Route path="settings" element={<SettingsPage />} />

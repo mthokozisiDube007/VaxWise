@@ -16,19 +16,19 @@
         // Health alerts
         public int AnimalsCurrentlyUnderTreatment { get; set; }
         public bool ActiveOutbreakDetected { get; set; }
+        public bool NotifiableDiseaseDetected { get; set; }
+        public string? NotifiableDiseaseName { get; set; }
+        public DateTime? DalrrdReportDeadline { get; set; }
+        public int AnimalsUnderWithdrawal { get; set; }
 
-        // Feed alerts
-        public int LowStockAlertCount { get; set; }
-        public List<string> LowStockFeedTypes { get; set; } = new();
+        // Vaccination coverage intelligence
+        public int OverdueVaccinationsCount { get; set; }
+        public int NeverVaccinatedCount { get; set; }
+        public double VaccinationCoverageRate { get; set; }
 
-        // Breeding alerts
-        public int UpcomingBirthsCount { get; set; }
-
-        // Financial summary
-        public decimal TotalIncomeThisMonth { get; set; }
-        public decimal TotalExpensesThisMonth { get; set; }
-        public decimal NetProfitThisMonth { get; set; }
-        public bool IsProfitableThisMonth { get; set; }
+        // Farm biosecurity risk
+        public int FarmRiskScore { get; set; }
+        public string FarmRiskLevel { get; set; } = "Low";
 
         // System summary
         public int TotalCertificatesIssued { get; set; }

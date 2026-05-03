@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using VaxWise.API.Algorithms;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Models;
@@ -25,24 +26,23 @@ namespace VaxWise.API.Services
 
             var record = new HealthRecord
             {
-                AnimalId = dto.AnimalId,
-                FarmId = farmId,
-                RecordType = dto.RecordType,
-                Symptoms = dto.Symptoms,
-                Diagnosis = dto.Diagnosis,
-                MedicationUsed = dto.MedicationUsed,
-                Dosage = dto.Dosage,
-                VetName = dto.VetName,
-                Outcome = dto.Outcome,
-                TreatmentDate = dto.TreatmentDate,
+                AnimalId        = dto.AnimalId,
+                FarmId          = farmId,
+                RecordType      = dto.RecordType,
+                Symptoms        = dto.Symptoms,
+                Diagnosis       = dto.Diagnosis,
+                MedicationUsed  = dto.MedicationUsed,
+                Dosage          = dto.Dosage,
+                VetName         = dto.VetName,
+                Outcome         = dto.Outcome,
+                TreatmentDate   = dto.TreatmentDate,
                 IsUnderTreatment = true,
-                CreatedAt = DateTime.UtcNow
+                WithdrawalDays  = dto.WithdrawalDays,   // Feature 3
+                CreatedAt       = DateTime.UtcNow
             };
 
             _context.HealthRecords.Add(record);
-
             animal.Status = "UnderTreatment";
-
             await _context.SaveChangesAsync();
 
             await CheckOutbreaksAsync(dto.Symptoms, farmId);
@@ -68,7 +68,7 @@ namespace VaxWise.API.Services
         {
             var records = await _context.HealthRecords
                 .Include(h => h.Animal)
-                .Where(h => h.FarmId == farmId && h.IsUnderTreatment == true)
+                .Where(h => h.FarmId == farmId && h.IsUnderTreatment)
                 .OrderByDescending(h => h.TreatmentDate)
                 .ToListAsync();
 
@@ -83,57 +83,65 @@ namespace VaxWise.API.Services
 
             var recentRecords = await _context.HealthRecords
                 .Include(h => h.Animal)
-                .Where(h =>
-                    h.FarmId == farmId &&
-                    h.Symptoms.Contains(symptoms) &&
-                    h.TreatmentDate >= fortyEightHoursAgo)
+                .Where(h => h.FarmId == farmId && h.TreatmentDate >= fortyEightHoursAgo)
                 .ToListAsync();
 
-            if (recentRecords.Count < 3)
-                return new OutbreakAlertDto
-                {
-                    OutbreakDetected = false,
-                    Symptoms = symptoms,
-                    AffectedAnimalsCount = recentRecords.Count,
-                    AffectedEarTags = new List<string>(),
-                    AlertMessage = "No outbreak detected",
-                    DetectedAt = DateTime.UtcNow
-                };
+            int totalAnimals = await _context.Animals
+                .CountAsync(a => a.FarmId == farmId);
 
-            var affectedEarTags = recentRecords
-                .Select(r => r.Animal.EarTagNumber)
+            // Feature 2 — load notifiable disease keywords from schedule library
+            var notifiableDiseases = await _context.VaccineSchedules
+                .Where(vs => vs.IsNotifiable && vs.NotifiableDiseaseName != null)
+                .Select(vs => new
+                {
+                    vs.VaccineName,
+                    DiseaseName = vs.NotifiableDiseaseName!,
+                    vs.ReportingWindowHours
+                })
                 .Distinct()
+                .ToListAsync();
+
+            var notifiableList = notifiableDiseases
+                .Select(d => (d.VaccineName, d.DiseaseName, d.ReportingWindowHours))
+                .ToList<(string Keyword, string DiseaseName, int ReportingWindowHours)>();
+
+            var records = recentRecords
+                .Select(r => (r, r.Animal.EarTagNumber))
                 .ToList();
 
-            return new OutbreakAlertDto
-            {
-                OutbreakDetected = true,
-                Symptoms = symptoms,
-                AffectedAnimalsCount = affectedEarTags.Count,
-                AffectedEarTags = affectedEarTags,
-                AlertMessage = $"OUTBREAK ALERT — {affectedEarTags.Count} animals showing '{symptoms}' within 48 hours. Immediate containment required.",
-                DetectedAt = DateTime.UtcNow
-            };
+            return OutbreakDetectionEngine.Analyse(symptoms, records, totalAnimals, notifiableList);
         }
 
         private static HealthRecordResponseDto MapToResponseDto(
             HealthRecord record, string earTagNumber)
         {
+            var now = DateTime.UtcNow;
+            bool withdrawalActive = WithdrawalPeriodCalculator.IsActive(
+                record.TreatmentDate, record.WithdrawalDays, now);
+
             return new HealthRecordResponseDto
             {
-                HealthRecordId = record.HealthRecordId,
-                AnimalId = record.AnimalId,
-                AnimalEarTag = earTagNumber,
-                RecordType = record.RecordType,
-                Symptoms = record.Symptoms,
-                Diagnosis = record.Diagnosis,
-                MedicationUsed = record.MedicationUsed,
-                Dosage = record.Dosage,
-                VetName = record.VetName,
-                Outcome = record.Outcome,
-                TreatmentDate = record.TreatmentDate,
-                IsUnderTreatment = record.IsUnderTreatment,
-                CreatedAt = record.CreatedAt
+                HealthRecordId       = record.HealthRecordId,
+                AnimalId             = record.AnimalId,
+                AnimalEarTag         = earTagNumber,
+                RecordType           = record.RecordType,
+                Symptoms             = record.Symptoms,
+                Diagnosis            = record.Diagnosis,
+                MedicationUsed       = record.MedicationUsed,
+                Dosage               = record.Dosage,
+                VetName              = record.VetName,
+                Outcome              = record.Outcome,
+                TreatmentDate        = record.TreatmentDate,
+                IsUnderTreatment     = record.IsUnderTreatment,
+                WithdrawalDays       = record.WithdrawalDays,
+                WithdrawalClearDate  = record.WithdrawalDays > 0
+                    ? WithdrawalPeriodCalculator.GetClearDate(record.TreatmentDate, record.WithdrawalDays)
+                    : null,
+                IsWithdrawalActive   = withdrawalActive,
+                DaysUntilClear       = withdrawalActive
+                    ? WithdrawalPeriodCalculator.DaysRemaining(record.TreatmentDate, record.WithdrawalDays, now)
+                    : 0,
+                CreatedAt            = record.CreatedAt
             };
         }
     }
