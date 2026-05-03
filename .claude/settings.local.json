@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(dir \"C:\\\\Users\\\\mthok\\\\Videos\" -Recurse -Depth 1 | Where-Object { $_.Name -eq \"VaxWise.API\" } | Select-Object FullName)",
+      "PowerShell($path = \"C:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\VaxWise.API\"; dir \"$path\\\\Controllers\"; dir \"$path\\\\Services\"; dir \"$path\\\\Data\"; dir \"$path\\\\DTOs\"; dir \"$path\\\\Helpers\")",
+      "Read(//mnt/c/Users/mthok/Videos/mthokozski Dube/project/VaxWise/VaxWise.API/Helpers/**)",
+      "Read(//mnt/c/Users/mthok/**)",
+      "PowerShell($base = \"C:\\\\Users\\\\mthok\\\\Videos\\\\mthokozski Dube\\\\project\\\\VaxWise\\\\vaxwise-client\"; Get-Content \"$base\\\\src\\\\main.jsx\")",
+      "Bash(Remove-Item \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\pages\\\\FeedingPage.jsx\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\pages\\\\BreedingPage.jsx\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\pages\\\\FinancialPage.jsx\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\api\\\\feedApi.js\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\api\\\\breedingApi.js\" -Force)",
+      "Bash(dotnet build *)",
+      "Bash(vercel --version)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\mthok\\\\Videos\\\\mthokozisi Dube\\\\project\\\\VaxWise\\\\vaxwise-client\\\\src\\\\api\\\\\" | ForEach-Object { $_.FullName })"
+    ]
+  }
+}

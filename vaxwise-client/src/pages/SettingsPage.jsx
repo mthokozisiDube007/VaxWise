@@ -2,10 +2,10 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const S = {
-  card: { background: 'white', borderRadius: '14px', padding: '28px', boxShadow: '0 1px 4px rgba(11,31,20,0.05), 0 4px 16px rgba(11,31,20,0.05)', marginBottom: '24px' },
-  row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #F0EBE2' },
-  lbl: { margin: '0 0 3px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  val: { margin: 0, fontSize: '14px', fontWeight: '600', color: '#0B1F14' },
+  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
+  row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #1F3326' },
+  lbl: { margin: '0 0 3px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' },
+  val: { margin: 0, fontSize: '14px', fontWeight: '600', color: '#F0EDE8' },
 };
 
 export default function SettingsPage() {
@@ -32,53 +32,53 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: '700', color: '#0B1F14', marginBottom: '4px' }}>Settings</h1>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Settings</h1>
         <p style={{ color: '#8C8677', fontSize: '14px' }}>Account profile and session information</p>
       </div>
 
       <div style={S.card}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #F0EBE2' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#0B1F14', color: '#C9850B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '22px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #1F3326' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#22C55E', color: '#0B1F14', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '22px', flexShrink: 0 }}>
             {initials}
           </div>
           <div>
-            <p style={{ margin: '0 0 4px', fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '20px', color: '#0B1F14' }}>{name}</p>
-            <span style={{ background: '#F0EBE1', color: '#6E6B60', padding: '2px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: '600' }}>{role}</span>
+            <p style={{ margin: '0 0 6px', fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '20px', color: '#F0EDE8' }}>{name}</p>
+            <span style={{ background: '#1A2B1F', color: '#8C8677', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', border: '1px solid #2D4A34' }}>{role}</span>
           </div>
         </div>
 
         {profileRows.map(({ label, value, mono }, i) => (
-          <div key={label} style={{ ...S.row, borderBottom: i === profileRows.length - 1 ? 'none' : '1px solid #F0EBE2' }}>
+          <div key={label} style={{ ...S.row, borderBottom: i === profileRows.length - 1 ? 'none' : '1px solid #1F3326' }}>
             <div>
               <p style={S.lbl}>{label}</p>
-              <p style={{ ...S.val, fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit', fontSize: mono ? '13px' : '14px' }}>{value}</p>
+              <p style={{ ...S.val, fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit', fontSize: mono ? '13px' : '14px', color: mono ? '#8C8677' : '#F0EDE8' }}>{value}</p>
             </div>
           </div>
         ))}
       </div>
 
       <div style={S.card}>
-        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#0B1F14', marginBottom: '4px' }}>Active Session</h3>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '4px' }}>Active Session</h3>
         <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '20px' }}>JWT Bearer authentication (HS256)</p>
         <div style={{ ...S.row, borderBottom: 'none' }}>
           <div>
             <p style={S.lbl}>Token Expires</p>
-            <p style={{ ...S.val, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>{expiry}</p>
+            <p style={{ ...S.val, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', color: '#8C8677' }}>{expiry}</p>
           </div>
         </div>
       </div>
 
       <div style={S.card}>
-        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#0B1F14', marginBottom: '20px' }}>About VaxWise</h3>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '20px' }}>About VaxWise</h3>
         {[
           { label: 'Version', value: 'v1.0.0' },
           { label: 'Platform', value: 'Biosecurity Operating System — South Africa' },
           { label: 'Compliance', value: 'DALRRD Aligned · POPIA Compliant' },
           { label: 'Backend', value: 'ASP.NET Core 10 · localhost:5200' },
         ].map(({ label, value }, i, arr) => (
-          <div key={label} style={{ ...S.row, borderBottom: i === arr.length - 1 ? 'none' : '1px solid #F0EBE2' }}>
+          <div key={label} style={{ ...S.row, borderBottom: i === arr.length - 1 ? 'none' : '1px solid #1F3326' }}>
             <div>
               <p style={S.lbl}>{label}</p>
               <p style={S.val}>{value}</p>
@@ -87,10 +87,13 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <div style={{ ...S.card, border: '1px solid #FECACA' }}>
-        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#DC2626', marginBottom: '6px' }}>Sign Out</h3>
+      <div style={{ ...S.card, border: '1px solid rgba(239,68,68,0.25)' }}>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#EF4444', marginBottom: '6px' }}>Sign Out</h3>
         <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '20px' }}>You will be returned to the login screen. Your data is saved.</p>
-        <button onClick={handleLogout} style={{ background: '#DC2626', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '9px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', fontFamily: "'DM Sans', sans-serif" }}>
+        <button
+          onClick={handleLogout}
+          style={{ background: '#EF4444', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
+        >
           Sign Out
         </button>
       </div>

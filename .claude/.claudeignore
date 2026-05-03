@@ -1,0 +1,50 @@
+# Dependencies (biggest token waster)
+node_modules/
+vendor/
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Lock files (huge, rarely useful)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+poetry.lock
+
+# Logs
+*.log
+logs/
+
+# Environment & secrets
+.env
+.env.*
+
+# Test coverage & reports
+coverage/
+.nyc_output/
+htmlcov/
+
+# IDE & OS files
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
+
+# Large data/assets
+*.csv
+*.sql
+*.dump
+public/images/
+public/videos/
+
+# Generated docs
+docs/_build/
+site/

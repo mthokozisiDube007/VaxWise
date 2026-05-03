@@ -3,19 +3,19 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { generateCertificate, getFarmCertificates, verifyCertificate } from '../api/certificatesApi';
 
 const S = {
-  card: { background: 'white', borderRadius: '14px', padding: '28px', boxShadow: '0 1px 4px rgba(11,31,20,0.05), 0 4px 16px rgba(11,31,20,0.05)', marginBottom: '24px' },
-  inp: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #E0D9CE', fontSize: '14px', boxSizing: 'border-box', background: '#FDFCF8', color: '#1A1A18', fontFamily: "'DM Sans', sans-serif" },
-  lbl: { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  tab: (a) => ({ padding: '8px 18px', border: 'none', borderRadius: '20px', background: a ? '#0B1F14' : 'transparent', cursor: 'pointer', fontWeight: a ? '600' : '400', color: a ? '#FFF' : '#8C8677', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }),
-  th: { padding: '11px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#F8F5F0', borderBottom: '1px solid #EDE8DF' },
-  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #F0EBE2', color: '#1A1A18' },
-  btn: (c) => ({ background: c, color: 'white', border: 'none', padding: '10px 22px', borderRadius: '9px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', fontFamily: "'DM Sans', sans-serif" }),
+  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
+  inp: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box', background: '#162219', color: '#F0EDE8', fontFamily: "'DM Sans', sans-serif", outline: 'none', transition: 'border-color 0.15s' },
+  lbl: { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' },
+  tab: (a) => ({ padding: '8px 20px', border: 'none', borderRadius: '8px', background: a ? '#22C55E' : 'transparent', cursor: 'pointer', fontWeight: a ? '700' : '400', color: a ? '#0B1F14' : '#8C8677', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }),
+  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
+  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
+  btn: (c) => ({ background: c, color: c === '#22C55E' ? '#0B1F14' : 'white', border: 'none', padding: '10px 22px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }),
 };
 
 const STATUS = {
-  Valid: { bg: '#F0FDF4', color: '#15803D' },
-  Expired: { bg: '#F8F8F8', color: '#9CA3AF' },
-  Tampered: { bg: '#FEF2F2', color: '#DC2626' },
+  Valid: { bg: '#052E16', color: '#22C55E' },
+  Expired: { bg: '#1A2B1F', color: '#4A4A42' },
+  Tampered: { bg: '#450A0A', color: '#EF4444' },
 };
 
 export default function CertificatesPage() {
@@ -41,77 +41,103 @@ export default function CertificatesPage() {
   const tabs = [{ key: 'list', label: 'My Certificates' }, { key: 'generate', label: '+ Generate' }, { key: 'verify', label: 'Verify' }];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: '700', color: '#0B1F14', marginBottom: '4px' }}>Certificates</h1>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Certificates</h1>
         <p style={{ color: '#8C8677', fontSize: '14px' }}>DALRRD-compliant vaccination certificates with SHA-256 tamper detection</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '5px', borderRadius: '12px', width: 'fit-content', marginBottom: '24px', boxShadow: '0 1px 4px rgba(11,31,20,0.06)' }}>
+      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', marginBottom: '24px' }}>
         {tabs.map(t => <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>)}
       </div>
 
       {tab === 'list' && (
         <div style={S.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#0B1F14' }}>Issued Certificates</h3>
-            <span style={{ background: '#F0EBE1', color: '#6E6B60', fontSize: '12px', fontWeight: '700', padding: '4px 10px', borderRadius: '20px' }}>{certs.length} total</span>
+            <div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Issued Certificates</h3>
+              <p style={{ fontSize: '12px', color: '#8C8677' }}>All certificates issued for this farm</p>
+            </div>
+            <span style={{ background: '#1A2B1F', color: '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #2D4A34' }}>
+              {certs.length} total
+            </span>
           </div>
           {certs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px', color: '#B0A898' }}>
-              <p style={{ fontSize: '24px', marginBottom: '8px' }}>◎</p>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
+              <p style={{ fontSize: '28px', marginBottom: '8px', color: '#8C8677' }}>◎</p>
               <p style={{ fontSize: '14px' }}>No certificates issued yet</p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['Cert ID','Animal','Vaccine','Issued','Expires','Status','Verify'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-              <tbody>{certs.map(c => {
-                const st = STATUS[c.status] || { bg: '#F1F5F9', color: '#64748B' };
-                return (
-                  <tr key={c.certId}>
-                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: '700', color: '#0B1F14' }}>#{c.certId}</td>
-                    <td style={{ ...S.td, fontWeight: '700', color: '#0B1F14' }}>{c.animalEarTag}</td>
-                    <td style={S.td}>{c.vaccineName}</td>
-                    <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.issuedAt).toLocaleDateString('en-ZA')}</td>
-                    <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.expiresAt).toLocaleDateString('en-ZA')}</td>
-                    <td style={S.td}>
-                      <span style={{ background: st.bg, color: st.color, padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{c.status}</span>
-                    </td>
-                    <td style={S.td}>
-                      <a href={c.qrCodeUrl} target="_blank" rel="noreferrer" style={{ color: '#C9850B', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>View ↗</a>
-                    </td>
-                  </tr>
-                );
-              })}</tbody>
-            </table>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>{['Cert ID','Animal','Vaccine','Issued','Expires','Status','Verify'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
+                </thead>
+                <tbody>{certs.map((c, i) => {
+                  const st = STATUS[c.status] || { bg: '#1A2B1F', color: '#8C8677' };
+                  return (
+                    <tr key={c.certId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
+                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: '700', color: '#8C8677' }}>#{c.certId}</td>
+                      <td style={{ ...S.td, fontWeight: '700', color: '#22C55E' }}>{c.animalEarTag}</td>
+                      <td style={S.td}>{c.vaccineName}</td>
+                      <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.issuedAt).toLocaleDateString('en-ZA')}</td>
+                      <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.expiresAt).toLocaleDateString('en-ZA')}</td>
+                      <td style={S.td}>
+                        <span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{c.status}</span>
+                      </td>
+                      <td style={S.td}>
+                        <a href={c.qrCodeUrl} target="_blank" rel="noreferrer" style={{ color: '#22C55E', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>View ↗</a>
+                      </td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {tab === 'generate' && (
         <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#0B1F14', marginBottom: '6px' }}>Generate Certificate</h3>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '4px' }}>Generate Certificate</h3>
           <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '24px' }}>Enter the vaccination event ID. The certificate will embed the SHA-256 audit hash and a QR verification code.</p>
           <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', marginBottom: '20px' }}>
-            <input type="number" value={generateEventId} onChange={e => setGenerateEventId(e.target.value)} placeholder="Vaccination Event ID" style={{ ...S.inp, flex: 1 }} />
-            <button onClick={() => generateMut.mutate(parseInt(generateEventId))} disabled={!generateEventId || generateMut.isPending} style={S.btn('#0B1F14')}>
+            <input
+              type="number"
+              value={generateEventId}
+              onChange={e => setGenerateEventId(e.target.value)}
+              placeholder="Vaccination Event ID"
+              style={{ ...S.inp, flex: 1 }}
+              onFocus={e => e.target.style.borderColor = '#22C55E'}
+              onBlur={e => e.target.style.borderColor = '#2D4A34'}
+            />
+            <button
+              onClick={() => generateMut.mutate(parseInt(generateEventId))}
+              disabled={!generateEventId || generateMut.isPending}
+              style={{ ...S.btn('#22C55E'), opacity: !generateEventId || generateMut.isPending ? 0.6 : 1 }}
+            >
               {generateMut.isPending ? 'Generating…' : 'Generate'}
             </button>
           </div>
-          {generateMut.isError && <p style={{ color: '#DC2626', fontSize: '13px', marginBottom: '12px' }}>Failed. Check the event ID.</p>}
+          {generateMut.isError && <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>Failed. Check the event ID.</p>}
           {generatedCert && (
-            <div style={{ padding: '24px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '12px', maxWidth: '540px' }}>
-              <p style={{ margin: '0 0 4px', fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#15803D' }}>
+            <div style={{ padding: '24px', background: '#0A2518', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', maxWidth: '540px' }}>
+              <p style={{ margin: '0 0 4px', fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#22C55E' }}>
                 Certificate #{generatedCert.certId}
               </p>
-              <p style={{ margin: '0 0 16px', color: '#6E6B60', fontSize: '13px' }}>
+              <p style={{ margin: '0 0 16px', color: '#8C8677', fontSize: '13px' }}>
                 {generatedCert.animalEarTag} · {generatedCert.vaccineName} · Issued {new Date(generatedCert.issuedAt).toLocaleDateString('en-ZA')} · Expires {new Date(generatedCert.expiresAt).toLocaleDateString('en-ZA')}
               </p>
-              <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SHA-256 Audit Hash</p>
-              <code style={{ display: 'block', fontSize: '11px', wordBreak: 'break-all', color: '#0B1F14', fontFamily: "'JetBrains Mono', monospace", background: 'white', padding: '10px 14px', borderRadius: '7px', border: '1px solid #D1FAE5', marginBottom: '16px' }}>{generatedCert.auditHash}</code>
+              <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' }}>SHA-256 Audit Hash</p>
+              <code style={{ display: 'block', fontSize: '11px', wordBreak: 'break-all', color: '#86EFAC', fontFamily: "'JetBrains Mono', monospace", background: '#162219', padding: '10px 14px', borderRadius: '7px', border: '1px solid #2D4A34', marginBottom: '16px' }}>
+                {generatedCert.auditHash}
+              </code>
               {generatedCert.pdfBase64 && (
-                <a href={`data:application/pdf;base64,${generatedCert.pdfBase64}`} download={`cert-${generatedCert.certId}.pdf`}
-                  style={{ ...S.btn('#177A3E'), display: 'inline-block', textDecoration: 'none', fontSize: '13px' }}>
+                <a
+                  href={`data:application/pdf;base64,${generatedCert.pdfBase64}`}
+                  download={`cert-${generatedCert.certId}.pdf`}
+                  style={{ ...S.btn('#22C55E'), display: 'inline-block', textDecoration: 'none', fontSize: '13px' }}
+                >
                   Download PDF
                 </a>
               )}
@@ -122,21 +148,37 @@ export default function CertificatesPage() {
 
       {tab === 'verify' && (
         <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#0B1F14', marginBottom: '6px' }}>Verify Certificate</h3>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '4px' }}>Verify Certificate</h3>
           <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '24px' }}>Inspectors and buyers can verify any certificate by ID — no login required.</p>
           <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', marginBottom: '20px' }}>
-            <input type="number" value={verifyId} onChange={e => setVerifyId(e.target.value)} placeholder="Certificate ID" style={{ ...S.inp, flex: 1 }} />
-            <button onClick={handleVerify} disabled={!verifyId} style={S.btn('#0B1F14')}>Verify</button>
+            <input
+              type="number"
+              value={verifyId}
+              onChange={e => setVerifyId(e.target.value)}
+              placeholder="Certificate ID"
+              style={{ ...S.inp, flex: 1 }}
+              onFocus={e => e.target.style.borderColor = '#22C55E'}
+              onBlur={e => e.target.style.borderColor = '#2D4A34'}
+            />
+            <button
+              onClick={handleVerify}
+              disabled={!verifyId}
+              style={{ ...S.btn('#22C55E'), opacity: !verifyId ? 0.6 : 1 }}
+            >
+              Verify
+            </button>
           </div>
           {verifyResult && (() => {
             const isValid = verifyResult.verificationStatus === 'Valid';
             const isTampered = verifyResult.verificationStatus === 'Tampered';
+            const borderColor = isValid ? 'rgba(34,197,94,0.3)' : isTampered ? 'rgba(239,68,68,0.3)' : '#2D4A34';
+            const statusColor = isValid ? '#22C55E' : isTampered ? '#EF4444' : '#8C8677';
             return (
-              <div style={{ padding: '24px', borderRadius: '12px', background: isValid ? '#F0FDF4' : isTampered ? '#FEF2F2' : '#F8F8F8', border: `1px solid ${isValid ? '#86EFAC' : isTampered ? '#FECACA' : '#E5E7EB'}`, maxWidth: '540px' }}>
-                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: isValid ? '#15803D' : isTampered ? '#DC2626' : '#6B7280', marginBottom: '16px' }}>
+              <div style={{ padding: '24px', borderRadius: '12px', background: '#162219', border: `1px solid ${borderColor}`, maxWidth: '540px' }}>
+                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: statusColor, marginBottom: '16px' }}>
                   {isValid ? '✓ Valid Certificate' : isTampered ? '✗ Tampered / Invalid' : '⚠ Expired'}
                 </p>
-                <div style={{ display: 'grid', gap: '10px', fontSize: '14px' }}>
+                <div style={{ display: 'grid', gap: '12px', fontSize: '14px', marginBottom: '16px' }}>
                   {[
                     ['Animal', verifyResult.animalEarTag],
                     ['Vaccine', `${verifyResult.vaccineName} · Batch ${verifyResult.vaccineBatch}`],
@@ -144,16 +186,14 @@ export default function CertificatesPage() {
                     ['Event', new Date(verifyResult.eventTimestamp).toLocaleString('en-ZA')],
                     ['Expires', new Date(verifyResult.expiresAt).toLocaleDateString('en-ZA')],
                   ].map(([label, value]) => (
-                    <div key={label} style={{ display: 'flex', gap: '12px' }}>
+                    <div key={label} style={{ display: 'flex', gap: '16px' }}>
                       <span style={{ minWidth: '80px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', paddingTop: '2px' }}>{label}</span>
-                      <span style={{ fontWeight: '600', color: '#0B1F14' }}>{value}</span>
+                      <span style={{ fontWeight: '600', color: '#F0EDE8' }}>{value}</span>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginTop: '16px' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Audit Hash</p>
-                  <code style={{ fontSize: '11px', wordBreak: 'break-all', color: '#8C8677', fontFamily: "'JetBrains Mono', monospace" }}>{verifyResult.auditHash}</code>
-                </div>
+                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Audit Hash</p>
+                <code style={{ fontSize: '11px', wordBreak: 'break-all', color: '#4A4A42', fontFamily: "'JetBrains Mono', monospace" }}>{verifyResult.auditHash}</code>
               </div>
             );
           })()}

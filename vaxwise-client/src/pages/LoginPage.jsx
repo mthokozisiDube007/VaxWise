@@ -4,8 +4,20 @@ import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../api/authApi';
 
 const ROLES = ['FarmOwner', 'FarmManager', 'Worker', 'Vet', 'Government', 'Inspector'];
-const inp = { width: '100%', padding: '11px 14px', borderRadius: '9px', border: '1.5px solid #E0D9CE', fontSize: '14px', boxSizing: 'border-box', background: '#FDFCF8', color: '#1A1A18', outline: 'none', fontFamily: "'DM Sans', sans-serif" };
-const lbl = { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' };
+
+const inp = {
+  width: '100%', padding: '11px 14px', borderRadius: '8px',
+  border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box',
+  background: '#162219', color: '#F0EDE8', outline: 'none',
+  fontFamily: "'DM Sans', sans-serif", transition: 'border-color 0.15s',
+};
+const lbl = {
+  display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600',
+  color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px',
+};
+
+const focusGreen = e => e.target.style.borderColor = '#22C55E';
+const blurGreen = e => e.target.style.borderColor = '#2D4A34';
 
 export default function LoginPage() {
   const [tab, setTab] = useState('login');
@@ -46,20 +58,20 @@ export default function LoginPage() {
   const setR = (k, v) => setRegForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans', sans-serif", background: '#111812' }}>
 
       {/* Left panel */}
-      <div style={{ width: '44%', background: '#0B1F14', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 44px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(201,133,11,0.07) 1.5px, transparent 1.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+      <div style={{ width: '44%', background: '#0B1F14', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 44px', position: 'relative', overflow: 'hidden', borderRight: '1px solid #1F3326' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(34,197,94,0.05) 1.5px, transparent 1.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '72px' }}>
-            <div style={{ width: '40px', height: '40px', background: '#C9850B', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px' }}>🛡️</div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: '700', color: '#FFF' }}>VaxWise</span>
+            <div style={{ width: '40px', height: '40px', background: '#22C55E', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px' }}>🛡️</div>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
           </div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '38px', fontWeight: '700', color: '#FFF', lineHeight: '1.18', marginBottom: '20px' }}>
-            South Africa's<br /><span style={{ color: '#C9850B' }}>Biosecurity</span><br />Operating System
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '38px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1.18', marginBottom: '20px' }}>
+            South Africa's<br /><span style={{ color: '#22C55E' }}>Biosecurity</span><br />Operating System
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '15px', lineHeight: '1.75', maxWidth: '300px' }}>
+          <p style={{ color: 'rgba(240,237,232,0.45)', fontSize: '15px', lineHeight: '1.75', maxWidth: '300px' }}>
             DALRRD aligned · POPIA compliant · SHA-256 tamper-proof vaccination records.
           </p>
         </div>
@@ -68,54 +80,99 @@ export default function LoginPage() {
             {[['🐄', 'Livestock'], ['💉', 'Vaccinations'], ['📜', 'Certificates']].map(([icon, label]) => (
               <div key={label}>
                 <div style={{ fontSize: '22px', marginBottom: '4px' }}>{icon}</div>
-                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                <p style={{ fontSize: '10px', color: 'rgba(240,237,232,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.18)' }}>© 2026 VaxWise · v1.0.0</p>
+          <p style={{ fontSize: '12px', color: 'rgba(240,237,232,0.18)' }}>© 2026 VaxWise · v1.0.0</p>
         </div>
       </div>
 
       {/* Right panel */}
-      <div style={{ flex: 1, background: '#F0EBE1', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div style={{ flex: 1, background: '#111812', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
-          <div style={{ display: 'flex', background: 'white', borderRadius: '12px', padding: '4px', marginBottom: '24px', boxShadow: '0 1px 6px rgba(11,31,20,0.07)' }}>
+          <div style={{ display: 'flex', background: '#162219', padding: '4px', borderRadius: '10px', marginBottom: '24px', border: '1px solid #1F3326' }}>
             {[{ key: 'login', label: 'Sign In' }, { key: 'register', label: 'Create Account' }].map(t => (
-              <button key={t.key} onClick={() => { setTab(t.key); setLoginError(''); setRegError(''); setRegSuccess(''); }}
-                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '9px', cursor: 'pointer', fontSize: '14px', fontWeight: tab === t.key ? '700' : '400', background: tab === t.key ? '#0B1F14' : 'transparent', color: tab === t.key ? '#FFF' : '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>
+              <button
+                key={t.key}
+                onClick={() => { setTab(t.key); setLoginError(''); setRegError(''); setRegSuccess(''); }}
+                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: tab === t.key ? '700' : '400', background: tab === t.key ? '#22C55E' : 'transparent', color: tab === t.key ? '#0B1F14' : '#8C8677', fontFamily: "'DM Sans', sans-serif" }}
+              >
                 {t.label}
               </button>
             ))}
           </div>
 
-          <div style={{ background: 'white', borderRadius: '16px', padding: '36px', boxShadow: '0 2px 20px rgba(11,31,20,0.07)' }}>
+          <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '36px', border: '1px solid #1F3326' }}>
             {tab === 'login' && (
               <form onSubmit={handleLogin}>
-                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#0B1F14', marginBottom: '4px' }}>Welcome back</h2>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#F0EDE8', marginBottom: '4px' }}>Welcome back</h2>
                 <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '28px' }}>Sign in to continue to VaxWise</p>
-                <div style={{ marginBottom: '16px' }}><label style={lbl}>Email Address</label><input type="email" value={loginForm.email} onChange={e => setL('email', e.target.value)} required style={inp} placeholder="you@example.com" /></div>
-                <div style={{ marginBottom: '24px' }}><label style={lbl}>Password</label><input type="password" value={loginForm.password} onChange={e => setL('password', e.target.value)} required style={inp} placeholder="••••••••" /></div>
-                {loginError && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '10px 14px', color: '#DC2626', fontSize: '13px', marginBottom: '18px' }}>{loginError}</div>}
-                <button type="submit" disabled={loginLoading} style={{ width: '100%', padding: '13px', background: '#0B1F14', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '600', fontFamily: "'DM Sans', sans-serif" }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={lbl}>Email Address</label>
+                  <input type="email" value={loginForm.email} onChange={e => setL('email', e.target.value)} required style={inp} placeholder="you@example.com" onFocus={focusGreen} onBlur={blurGreen} />
+                </div>
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={lbl}>Password</label>
+                  <input type="password" value={loginForm.password} onChange={e => setL('password', e.target.value)} required style={inp} placeholder="••••••••" onFocus={focusGreen} onBlur={blurGreen} />
+                </div>
+                {loginError && (
+                  <div style={{ background: '#1A0A0A', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#EF4444', fontSize: '13px', marginBottom: '18px' }}>{loginError}</div>
+                )}
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  style={{ width: '100%', padding: '13px', background: '#22C55E', color: '#0B1F14', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: loginLoading ? 'not-allowed' : 'pointer', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: loginLoading ? 0.7 : 1 }}
+                >
                   {loginLoading ? 'Signing in…' : 'Sign In'}
                 </button>
               </form>
             )}
             {tab === 'register' && (
               <form onSubmit={handleRegister}>
-                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#0B1F14', marginBottom: '4px' }}>Create account</h2>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#F0EDE8', marginBottom: '4px' }}>Create account</h2>
                 <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '24px' }}>Join VaxWise as a farm operator or vet</p>
                 <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
-                  <div><label style={lbl}>Full Name</label><input value={regForm.fullName} onChange={e => setR('fullName', e.target.value)} required style={inp} placeholder="Thabo Nkosi" /></div>
-                  <div><label style={lbl}>Email Address</label><input type="email" value={regForm.email} onChange={e => setR('email', e.target.value)} required style={inp} placeholder="you@example.com" /></div>
-                  <div><label style={lbl}>Role</label><select value={regForm.role} onChange={e => setR('role', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>{ROLES.map(r => <option key={r}>{r}</option>)}</select></div>
-                  {regForm.role === 'Vet' && <div><label style={lbl}>SAVC Number</label><input value={regForm.savcNumber} onChange={e => setR('savcNumber', e.target.value)} placeholder="e.g. SAVC-12345" style={inp} /></div>}
-                  <div><label style={lbl}>Password</label><input type="password" value={regForm.password} onChange={e => setR('password', e.target.value)} required minLength={6} style={inp} placeholder="Min. 6 characters" /></div>
-                  <div><label style={lbl}>Confirm Password</label><input type="password" value={regForm.confirmPassword} onChange={e => setR('confirmPassword', e.target.value)} required style={inp} placeholder="Repeat password" /></div>
+                  <div>
+                    <label style={lbl}>Full Name</label>
+                    <input value={regForm.fullName} onChange={e => setR('fullName', e.target.value)} required style={inp} placeholder="Thabo Nkosi" onFocus={focusGreen} onBlur={blurGreen} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Email Address</label>
+                    <input type="email" value={regForm.email} onChange={e => setR('email', e.target.value)} required style={inp} placeholder="you@example.com" onFocus={focusGreen} onBlur={blurGreen} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Role</label>
+                    <select value={regForm.role} onChange={e => setR('role', e.target.value)} style={{ ...inp, cursor: 'pointer' }} onFocus={focusGreen} onBlur={blurGreen}>
+                      {ROLES.map(r => <option key={r} style={{ background: '#162219' }}>{r}</option>)}
+                    </select>
+                  </div>
+                  {regForm.role === 'Vet' && (
+                    <div>
+                      <label style={lbl}>SAVC Number</label>
+                      <input value={regForm.savcNumber} onChange={e => setR('savcNumber', e.target.value)} placeholder="e.g. SAVC-12345" style={inp} onFocus={focusGreen} onBlur={blurGreen} />
+                    </div>
+                  )}
+                  <div>
+                    <label style={lbl}>Password</label>
+                    <input type="password" value={regForm.password} onChange={e => setR('password', e.target.value)} required minLength={6} style={inp} placeholder="Min. 6 characters" onFocus={focusGreen} onBlur={blurGreen} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Confirm Password</label>
+                    <input type="password" value={regForm.confirmPassword} onChange={e => setR('confirmPassword', e.target.value)} required style={inp} placeholder="Repeat password" onFocus={focusGreen} onBlur={blurGreen} />
+                  </div>
                 </div>
-                {regError && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '10px 14px', color: '#DC2626', fontSize: '13px', marginBottom: '14px' }}>{regError}</div>}
-                {regSuccess && <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', padding: '10px 14px', color: '#15803D', fontSize: '13px', fontWeight: '600', marginBottom: '14px' }}>✓ {regSuccess}</div>}
-                <button type="submit" disabled={regLoading} style={{ width: '100%', padding: '13px', background: '#C9850B', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '600', fontFamily: "'DM Sans', sans-serif" }}>
+                {regError && (
+                  <div style={{ background: '#1A0A0A', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#EF4444', fontSize: '13px', marginBottom: '14px' }}>{regError}</div>
+                )}
+                {regSuccess && (
+                  <div style={{ background: '#0A2518', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#22C55E', fontSize: '13px', fontWeight: '600', marginBottom: '14px' }}>✓ {regSuccess}</div>
+                )}
+                <button
+                  type="submit"
+                  disabled={regLoading}
+                  style={{ width: '100%', padding: '13px', background: '#22C55E', color: '#0B1F14', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: regLoading ? 'not-allowed' : 'pointer', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: regLoading ? 0.7 : 1 }}
+                >
                   {regLoading ? 'Creating account…' : 'Create Account'}
                 </button>
               </form>
