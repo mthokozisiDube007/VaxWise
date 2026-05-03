@@ -18,6 +18,7 @@ namespace VaxWise.API.Data
         public DbSet<FarmWorker> FarmWorkers { get; set; }
         public DbSet<WorkerInvitation> WorkerInvitations { get; set; }
         public DbSet<VaccineSchedule> VaccineSchedules { get; set; }
+        public DbSet<LoginAuditLog> LoginAuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

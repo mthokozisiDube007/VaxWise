@@ -108,6 +108,11 @@ export default function Layout() {
                   <span style={{ fontSize: '11px', opacity: 0.55 }}>◧</span> Farms
                 </NavLink>
               )}
+              {hasRole('Admin') && (
+                <NavLink to="/admin" style={({ isActive }) => isActive ? activeStyle : inactiveStyle}>
+                  <span style={{ fontSize: '11px', opacity: 0.55 }}>◎</span> Login Monitor
+                </NavLink>
+              )}
               <NavLink to="/settings" style={({ isActive }) => isActive ? activeStyle : inactiveStyle}>
                 <span style={{ fontSize: '11px', opacity: 0.55 }}>⊙</span> Settings
               </NavLink>

@@ -12,6 +12,7 @@ const HealthPage = lazy(() => import('./pages/HealthPage'));
 const CertificatesPage = lazy(() => import('./pages/CertificatesPage'));
 const FarmsPage = lazy(() => import('./pages/FarmsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#111812', color: '#8C8677', fontFamily: "'DM Sans', sans-serif", fontSize: '14px' }}>
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="certificates" element={<CertificatesPage />} />
           <Route path="farms" element={<FarmsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="admin" element={<AdminPage />} />
         </Route>
       </Routes>
     </Suspense>

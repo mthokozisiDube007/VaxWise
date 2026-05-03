@@ -54,6 +54,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFarmService, FarmService>();
 builder.Services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ILoginAuditService, LoginAuditService>();
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
