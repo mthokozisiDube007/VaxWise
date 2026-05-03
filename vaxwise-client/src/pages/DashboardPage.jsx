@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getDashboard } from '../api/dashboardApi';
 import { getUpcomingVaccinations } from '../api/vaccinationsApi';
+import { downloadDalrrdReport } from '../api/reportsApi';
 import { useAuth } from '../context/AuthContext';
 
 const S = {
@@ -20,8 +22,23 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const userName = user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'Farmer';
 
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
+
   const { data: dash = {}, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: getDashboard });
   const { data: upcoming = [] } = useQuery({ queryKey: ['upcoming'], queryFn: getUpcomingVaccinations });
+
+  const handleDownloadReport = async () => {
+    setReportLoading(true);
+    setReportError('');
+    try {
+      await downloadDalrrdReport();
+    } catch {
+      setReportError('Report generation failed. Ensure a notifiable outbreak is active.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   if (isLoading) return (
     <div style={{ padding: '40px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading dashboard…</div>
@@ -78,11 +95,11 @@ export default function DashboardPage() {
       {dash.notifiableDiseaseDetected && (
         <div style={{ background: '#7F1D1D', color: 'white', borderRadius: '12px', padding: '16px 24px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
           <span style={{ fontSize: '22px', marginTop: '1px' }}>⚠</span>
-          <div>
+          <div style={{ flex: 1 }}>
             <p style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>
               DALRRD Notifiable Disease Detected: {dash.notifiableDiseaseName}
             </p>
-            <p style={{ fontSize: '13px', opacity: 0.9 }}>
+            <p style={{ fontSize: '13px', opacity: 0.9, marginBottom: '12px' }}>
               Mandatory reporting deadline:{' '}
               <strong>
                 {dash.dalrrdReportDeadline
@@ -91,6 +108,14 @@ export default function DashboardPage() {
               </strong>{' '}
               — Contact DALRRD immediately.
             </p>
+            {reportError && <p style={{ fontSize: '12px', color: '#FCA5A5', marginBottom: '8px' }}>{reportError}</p>}
+            <button
+              onClick={handleDownloadReport}
+              disabled={reportLoading}
+              style={{ background: 'white', color: '#7F1D1D', border: 'none', padding: '8px 18px', borderRadius: '8px', cursor: reportLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: reportLoading ? 0.7 : 1 }}
+            >
+              {reportLoading ? 'Generating PDF…' : '⬇ Download DALRRD Report'}
+            </button>
           </div>
         </div>
       )}

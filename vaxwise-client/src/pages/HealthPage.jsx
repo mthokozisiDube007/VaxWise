@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { recordTreatment, getHealthRecords, getCurrentHealth, checkOutbreak } from '../api/healthApi';
 import { getAllAnimals } from '../api/animalsApi';
+import { downloadDalrrdReport } from '../api/reportsApi';
 
 const S = {
   card: { background: 'white', borderRadius: '14px', padding: '28px', boxShadow: '0 1px 4px rgba(11,31,20,0.05), 0 4px 16px rgba(11,31,20,0.05)', marginBottom: '24px' },
@@ -28,6 +29,8 @@ export default function HealthPage() {
   const [historyAnimalId, setHistoryAnimalId] = useState('');
   const [symptomCheck, setSymptomCheck] = useState('');
   const [outbreakResult, setOutbreakResult] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   const { data: animals = [] } = useQuery({ queryKey: ['animals'], queryFn: getAllAnimals });
   const { data: current = [] } = useQuery({ queryKey: ['health-current'], queryFn: getCurrentHealth });
@@ -47,6 +50,19 @@ export default function HealthPage() {
     if (!symptomCheck.trim()) return;
     const r = await checkOutbreak(symptomCheck);
     setOutbreakResult(r);
+    setReportError('');
+  };
+
+  const handleDownloadReport = async () => {
+    setReportLoading(true);
+    setReportError('');
+    try {
+      await downloadDalrrdReport();
+    } catch {
+      setReportError('Could not generate report. Ensure a notifiable outbreak is active on this farm.');
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   const tabs = [
@@ -221,11 +237,11 @@ export default function HealthPage() {
                 </p>
               )}
               {outbreakResult.isNotifiable && (
-                <div style={{ marginTop: '14px', padding: '12px 16px', background: '#7F1D1D', borderRadius: '8px', color: 'white' }}>
+                <div style={{ marginTop: '14px', padding: '14px 16px', background: '#7F1D1D', borderRadius: '8px', color: 'white' }}>
                   <p style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>
                     DALRRD Notifiable: {outbreakResult.notifiableDiseaseName}
                   </p>
-                  <p style={{ fontSize: '13px', opacity: 0.9 }}>
+                  <p style={{ fontSize: '13px', opacity: 0.9, marginBottom: '12px' }}>
                     Reporting deadline:{' '}
                     <strong>
                       {outbreakResult.dalrrdReportDeadline
@@ -233,6 +249,14 @@ export default function HealthPage() {
                         : 'N/A'}
                     </strong>
                   </p>
+                  {reportError && <p style={{ fontSize: '12px', color: '#FCA5A5', marginBottom: '8px' }}>{reportError}</p>}
+                  <button
+                    onClick={handleDownloadReport}
+                    disabled={reportLoading}
+                    style={{ background: 'white', color: '#7F1D1D', border: 'none', padding: '8px 18px', borderRadius: '8px', cursor: reportLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: reportLoading ? 0.7 : 1 }}
+                  >
+                    {reportLoading ? 'Generating PDF…' : '⬇ Download DALRRD Report'}
+                  </button>
                 </div>
               )}
             </div>
