@@ -4,6 +4,7 @@ import { getDashboard } from '../api/dashboardApi';
 import { getUpcomingVaccinations } from '../api/vaccinationsApi';
 import { downloadDalrrdReport } from '../api/reportsApi';
 import { useAuth } from '../context/AuthContext';
+import { useMobile } from '../hooks/useMobile';
 
 const S = {
   card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
@@ -20,10 +21,13 @@ const riskColor = (level) => {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const isMobile = useMobile();
   const userName = user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'Farmer';
 
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState('');
+
+  const card = { ...S.card, padding: isMobile ? '16px' : '28px 32px' };
 
   const { data: dash = {}, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: getDashboard });
   const { data: upcoming = [] } = useQuery({ queryKey: ['upcoming'], queryFn: getUpcomingVaccinations });
@@ -69,12 +73,14 @@ export default function DashboardPage() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>
-          Welcome back, {userName}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>
+          Welcome back, {userName.split(' ')[0]}
         </h1>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>
-          VaxWise Biosecurity Dashboard · {new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <p style={{ color: '#8C8677', fontSize: '13px' }}>
+          {isMobile
+            ? new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+            : `VaxWise Biosecurity Dashboard · ${new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
         </p>
       </div>
 
@@ -117,31 +123,31 @@ export default function DashboardPage() {
       )}
 
       {/* Stats row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
         {statsRow1.map(({ label, value, color, sub }) => (
-          <div key={label} style={{ ...S.card, marginBottom: 0, borderTop: `3px solid ${color}` }}>
+          <div key={label} style={{ ...card, marginBottom: 0, borderTop: `3px solid ${color}` }}>
             <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '14px' }}>{label}</p>
-            <p style={{ fontSize: '48px', fontWeight: '700', color, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>{value}</p>
+            <p style={{ fontSize: isMobile ? '36px' : '48px', fontWeight: '700', color, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>{value}</p>
             <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '8px' }}>{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Stats row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {statsRow2.map(({ label, value, color, sub }) => (
-          <div key={label} style={{ ...S.card, marginBottom: 0, borderTop: `3px solid ${color}` }}>
+          <div key={label} style={{ ...card, marginBottom: 0, borderTop: `3px solid ${color}` }}>
             <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '14px' }}>{label}</p>
-            <p style={{ fontSize: '48px', fontWeight: '700', color, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>{value}</p>
+            <p style={{ fontSize: isMobile ? '36px' : '48px', fontWeight: '700', color, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>{value}</p>
             <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '8px' }}>{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Risk score + Coverage */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
         {/* Biosecurity Risk */}
-        <div style={{ ...S.card, marginBottom: 0 }}>
+        <div style={{ ...card, marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', color: '#F0EDE8', marginBottom: '2px' }}>Farm Biosecurity Risk</h3>
@@ -152,7 +158,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '56px', fontWeight: '700', fontFamily: "'Playfair Display', serif", color: riskColor(riskLvl), lineHeight: 1 }}>{riskScore}</span>
+            <span style={{ fontSize: isMobile ? '42px' : '56px', fontWeight: '700', fontFamily: "'Playfair Display', serif", color: riskColor(riskLvl), lineHeight: 1 }}>{riskScore}</span>
             <span style={{ fontSize: '14px', color: '#8C8677' }}>/100</span>
           </div>
           <div style={{ height: '6px', background: '#1F3326', borderRadius: '3px', overflow: 'hidden' }}>
@@ -161,7 +167,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Vaccination Coverage */}
-        <div style={{ ...S.card, marginBottom: 0 }}>
+        <div style={{ ...card, marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', color: '#F0EDE8', marginBottom: '2px' }}>Vaccination Coverage</h3>
@@ -188,7 +194,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Upcoming vaccinations */}
-      <div style={S.card}>
+      <div style={card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Upcoming Vaccinations</h2>
