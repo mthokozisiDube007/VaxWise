@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv } from '../api/animalsApi';
 import { useAuth } from '../context/AuthContext';
+import { useMobile } from '../hooks/useMobile';
 
 const S = {
   card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
@@ -27,6 +28,7 @@ export default function AnimalsPage() {
   const [form, setForm] = useState({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ breed: '', currentWeightKg: 0, status: 'Active' });
+  const isMobile = useMobile();
 
   const { data: animals = [], isLoading } = useQuery({ queryKey: ['animals'], queryFn: getAllAnimals });
 
@@ -52,7 +54,7 @@ export default function AnimalsPage() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Animal Registry</h1>
           <p style={{ color: '#8C8677', fontSize: '14px' }}>{animals.length} animal{animals.length !== 1 ? 's' : ''} registered</p>
@@ -80,7 +82,7 @@ export default function AnimalsPage() {
         <div style={S.card}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Register New Animal</h3>
           <form onSubmit={e => { e.preventDefault(); createMutation.mutate(form); }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
               {[
                 { label: 'Ear Tag Number', key: 'earTagNumber', type: 'text' },
                 { label: 'RFID Tag', key: 'rfidTag', type: 'text' },

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getFarms, createFarm, updateFarm, getFarmWorkers, inviteWorker, updateWorker, removeWorker } from '../api/farmsApi';
+import { useMobile } from '../hooks/useMobile';
 
 const S = {
   card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
@@ -30,6 +31,7 @@ export default function FarmsPage() {
   const [editingWorker, setEditingWorker] = useState(null);
   const [editWorkerForm, setEditWorkerForm] = useState({ role: '', customTitle: '' });
 
+  const isMobile = useMobile();
   const { data: farms = [] } = useQuery({ queryKey: ['farms'], queryFn: getFarms });
   const { data: workers = [] } = useQuery({ queryKey: ['workers', selectedFarmId], queryFn: () => getFarmWorkers(selectedFarmId), enabled: !!selectedFarmId });
 
@@ -62,7 +64,7 @@ export default function FarmsPage() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Farm Management</h1>
           <p style={{ color: '#8C8677', fontSize: '14px' }}>Manage your farms, workers, and access control</p>
@@ -79,7 +81,7 @@ export default function FarmsPage() {
         <div style={S.card}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Create New Farm</h3>
           <form onSubmit={e => { e.preventDefault(); createMut.mutate(farmForm); }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
               <div>
                 <label style={S.lbl}>Farm Name</label>
                 <input value={farmForm.farmName} onChange={e => setF('farmName', e.target.value)} required style={S.inp} onFocus={focusGreen} onBlur={blurGreen} />
@@ -193,7 +195,7 @@ export default function FarmsPage() {
 
       {selectedFarm && (
         <div style={S.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Workers — {selectedFarm.farmName}</h3>
               <p style={{ color: '#8C8677', fontSize: '13px' }}>{workers.length} team member{workers.length !== 1 ? 's' : ''}</p>
@@ -209,7 +211,7 @@ export default function FarmsPage() {
           {showInvite && (
             <div style={{ background: '#162219', borderRadius: '10px', padding: '20px', marginBottom: '20px', border: '1px solid #2D4A34' }}>
               <form onSubmit={e => { e.preventDefault(); inviteMut.mutate({ farmId: selectedFarmId, ...inviteForm }); }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
                   <div>
                     <label style={S.lbl}>Email</label>
                     <input type="email" value={inviteForm.email} onChange={e => setI('email', e.target.value)} required style={S.inp} onFocus={focusGreen} onBlur={blurGreen} />

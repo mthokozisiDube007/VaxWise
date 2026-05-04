@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getFarms } from '../api/farmsApi';
+import { useMobile } from '../hooks/useMobile';
 
 const FARM_FREE_ROUTES = ['/farms', '/settings', '/admin'];
 
@@ -45,6 +47,10 @@ export default function Layout() {
   const { user, logout, hasRole, activeFarmId, selectFarm } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const isMobile = useMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   const userName = user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'User';
   const userRole = user?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '';
@@ -59,14 +65,33 @@ export default function Layout() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'DM Sans', sans-serif", background: '#111812' }}>
 
+      {/* Mobile backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 40 }} />
+      )}
+
       {/* Sidebar */}
-      <nav style={{ width: '232px', minWidth: '232px', background: '#0B1F14', display: 'flex', flexDirection: 'column', overflowY: 'auto', borderRight: '1px solid #1F3326' }}>
+      <nav style={{
+        width: '232px', minWidth: '232px', background: '#0B1F14',
+        display: 'flex', flexDirection: 'column', borderRight: '1px solid #1F3326',
+        ...(isMobile ? {
+          position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 50,
+          width: '280px', minWidth: '280px', overflowY: 'auto',
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+        } : { overflowY: 'auto' }),
+      }}>
 
         {/* Logo */}
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <div style={{ width: '32px', height: '32px', background: '#22C55E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>🛡️</div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', background: '#22C55E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>🛡️</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+            </div>
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#8C8677', fontSize: '20px', cursor: 'pointer', padding: '4px', lineHeight: 1 }}>✕</button>
+            )}
           </div>
           <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginLeft: '42px', letterSpacing: '0.7px', textTransform: 'uppercase' }}>Biosecurity OS · ZA</p>
         </div>
@@ -140,13 +165,36 @@ export default function Layout() {
       </nav>
 
       {/* Main content */}
-      <main style={{ flex: 1, background: '#111812', overflowY: 'auto' }}>
+      <main style={{ flex: 1, background: '#111812', overflowY: 'auto', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+        {/* Mobile top bar */}
+        {isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0B1F14', borderBottom: '1px solid #1F3326', position: 'sticky', top: 0, zIndex: 30, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', background: '#22C55E', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }}>🛡️</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '17px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {needsFarmSelect && activeFarmId && (
+                <span style={{ fontSize: '11px', color: '#22C55E', background: 'rgba(34,197,94,0.1)', padding: '3px 8px', borderRadius: '20px', border: '1px solid rgba(34,197,94,0.2)', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {farms.find(f => f.farmId == activeFarmId)?.farmName || 'Farm'}
+                </span>
+              )}
+              <button onClick={() => setSidebarOpen(true)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#F0EDE8', cursor: 'pointer', fontSize: '16px', padding: '6px 10px', borderRadius: '7px', lineHeight: 1 }}>
+                ☰
+              </button>
+            </div>
+          </div>
+        )}
+
         {farmGateActive ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '40px' }}>
-            <div style={{ background: '#1A2B1F', borderRadius: '20px', padding: '48px 40px', border: '1px solid #2D4A34', textAlign: 'center', maxWidth: '400px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, padding: isMobile ? '24px 16px' : '40px' }}>
+            <div style={{ background: '#1A2B1F', borderRadius: '20px', padding: isMobile ? '32px 20px' : '48px 40px', border: '1px solid #2D4A34', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
               <div style={{ width: '60px', height: '60px', background: '#162219', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', margin: '0 auto 20px', border: '1px solid #2D4A34' }}>🏡</div>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', color: '#F0EDE8', marginBottom: '10px' }}>Select a Farm</h2>
-              <p style={{ color: '#8C8677', fontSize: '14px', lineHeight: '1.6' }}>Choose a farm from the sidebar to begin managing your livestock data.</p>
+              <p style={{ color: '#8C8677', fontSize: '14px', lineHeight: '1.6' }}>
+                {isMobile ? 'Tap ☰ and choose a farm to begin.' : 'Choose a farm from the sidebar to begin managing your livestock data.'}
+              </p>
               {farms.length === 0 && (
                 <p style={{ color: '#EF4444', marginTop: '16px', fontSize: '13px' }}>
                   No farms yet.{' '}
@@ -156,7 +204,7 @@ export default function Layout() {
             </div>
           </div>
         ) : (
-          <div style={{ padding: '36px 40px' }}>
+          <div style={{ padding: isMobile ? '16px' : '36px 40px' }}>
             <Outlet />
           </div>
         )}

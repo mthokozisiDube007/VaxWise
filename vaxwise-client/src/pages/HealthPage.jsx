@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useMobile } from '../hooks/useMobile';
 import { recordTreatment, getHealthRecords, getCurrentHealth, checkOutbreak } from '../api/healthApi';
 import { getAllAnimals } from '../api/animalsApi';
 import { downloadDalrrdReport } from '../api/reportsApi';
@@ -23,6 +24,7 @@ const EMPTY_FORM = {
 
 export default function HealthPage() {
   const { hasRole } = useAuth();
+  const isMobile = useMobile();
   const qc = useQueryClient();
   const [tab, setTab] = useState('current');
   const [form, setForm] = useState(EMPTY_FORM);
@@ -79,8 +81,10 @@ export default function HealthPage() {
         <p style={{ color: '#8C8677', fontSize: '14px' }}>Treatment records, health history, and outbreak detection</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', marginBottom: '24px', border: '1px solid #1F3326' }}>
+      <div style={{ overflowX: 'auto', marginBottom: '24px', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', minWidth: 'max-content', border: '1px solid #1F3326' }}>
         {tabs.map(t => <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>)}
+      </div>
       </div>
 
       {/* Under Treatment */}
@@ -137,7 +141,7 @@ export default function HealthPage() {
         <div style={S.card}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Record Treatment</h3>
           <form onSubmit={e => { e.preventDefault(); recordMut.mutate({ ...form, animalId: parseInt(form.animalId), withdrawalDays: parseInt(form.withdrawalDays) || 0 }); }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
               <div>
                 <label style={S.lbl}>Animal</label>
                 <select value={form.animalId} onChange={e => set('animalId', e.target.value)} required style={{ ...S.inp }}>
@@ -223,7 +227,7 @@ export default function HealthPage() {
         <div style={S.card}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '8px' }}>Outbreak Detection</h3>
           <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '24px' }}>Alert fires when 3+ animals show the same symptom within 48 hours.</p>
-          <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '12px', maxWidth: isMobile ? '100%' : '480px', marginBottom: '20px' }}>
             <input value={symptomCheck} onChange={e => setSymptomCheck(e.target.value)} placeholder="e.g. FMD, respiratory, diarrhoea" style={{ ...S.inp, flex: 1 }} />
             <button onClick={handleOutbreakCheck} style={S.btn('#EF4444')}>Check</button>
           </div>

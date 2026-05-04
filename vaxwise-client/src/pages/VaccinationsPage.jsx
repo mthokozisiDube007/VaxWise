@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useMobile } from '../hooks/useMobile';
 import {
   captureVaccination, getVaccinationsByAnimal, getUpcomingVaccinations,
   getVaccineSchedules, batchCaptureVaccination, getHerdImmunity, exportVaccinationsCsv
@@ -25,6 +26,7 @@ const EMPTY_BATCH = { vaccineName: '', vaccineBatch: '', manufacturer: '', expir
 // Overlay for batch vaccination modal
 function BatchModal({ animals, onClose }) {
   const qc = useQueryClient();
+  const isMobile = useMobile();
   const [form, setForm] = useState(EMPTY_BATCH);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [schedules, setSchedules] = useState([]);
@@ -60,8 +62,8 @@ function BatchModal({ animals, onClose }) {
   });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#1A2B1F', borderRadius: '16px', border: '1px solid #2D4A34', width: '100%', maxWidth: '760px', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? '0' : '20px' }}>
+      <div style={{ background: '#1A2B1F', borderRadius: isMobile ? '16px 16px 0 0' : '16px', border: '1px solid #2D4A34', width: '100%', maxWidth: isMobile ? '100%' : '760px', maxHeight: isMobile ? '92vh' : '90vh', overflowY: 'auto', padding: isMobile ? '20px 16px' : '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#F0EDE8', marginBottom: '4px' }}>Batch Vaccination</h2>
@@ -94,7 +96,7 @@ function BatchModal({ animals, onClose }) {
             batchMut.mutate({ ...form, animalIds: [...selectedIds], expiryDate: form.expiryDate, nextDueDate: form.nextDueDate || null });
           }}>
             {/* Vaccine details */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '14px', marginBottom: '20px' }}>
               <div>
                 <label style={S.lbl}>Filter by Animal Type</label>
                 <select value={form.animalTypeFilter} onChange={e => { set('animalTypeFilter', e.target.value); setSelectedIds(new Set()); }} style={S.inp} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}>
@@ -166,6 +168,7 @@ function BatchModal({ animals, onClose }) {
 
 export default function VaccinationsPage() {
   const { hasRole } = useAuth();
+  const isMobile = useMobile();
   const qc = useQueryClient();
   const [tab, setTab] = useState('upcoming');
   const [form, setForm] = useState(EMPTY_FORM);
@@ -228,9 +231,9 @@ export default function VaccinationsPage() {
     <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
       {showBatch && <BatchModal animals={animals} onClose={() => setShowBatch(false)} />}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Vaccinations</h1>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '26px' : '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Vaccinations</h1>
           <p style={{ color: '#8C8677', fontSize: '14px' }}>DALRRD-compliant vaccination records with SHA-256 audit hashing</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -245,8 +248,10 @@ export default function VaccinationsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', marginBottom: '24px' }}>
+      <div style={{ overflowX: 'auto', marginBottom: '24px', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', minWidth: 'max-content' }}>
         {tabs.map(t => <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>)}
+      </div>
       </div>
 
       {/* Upcoming */}
@@ -303,7 +308,7 @@ export default function VaccinationsPage() {
             e.preventDefault();
             captureMut.mutate({ ...form, animalId: parseInt(form.animalId), nextDueDate: form.nextDueDate || null });
           }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
               <div>
                 <label style={S.lbl}>Animal</label>
                 <select value={form.animalId} onChange={e => set('animalId', e.target.value)} required style={S.inp} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}>

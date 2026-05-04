@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../api/authApi';
+import { useMobile } from '../hooks/useMobile';
 
 // Only FarmOwner and Admin can self-register — all other roles are invitation-only
 const SELF_REGISTER_ROLES = ['FarmOwner', 'Admin'];
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [tab, setTab] = useState('login');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useMobile();
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
@@ -65,8 +67,8 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans', sans-serif", background: '#111812' }}>
 
-      {/* Left panel */}
-      <div style={{ width: '44%', background: '#0B1F14', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 44px', position: 'relative', overflow: 'hidden', borderRight: '1px solid #1F3326' }}>
+      {/* Left panel — hidden on mobile */}
+      <div style={{ width: '44%', background: '#0B1F14', display: isMobile ? 'none' : 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 44px', position: 'relative', overflow: 'hidden', borderRight: '1px solid #1F3326' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(34,197,94,0.05) 1.5px, transparent 1.5px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '72px' }}>
@@ -94,8 +96,14 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div style={{ flex: 1, background: '#111812', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div style={{ flex: 1, background: '#111812', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '24px 16px' : '40px' }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px', justifyContent: 'center' }}>
+              <div style={{ width: '36px', height: '36px', background: '#22C55E', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>🛡️</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+            </div>
+          )}
           <div style={{ display: 'flex', background: '#162219', padding: '4px', borderRadius: '10px', marginBottom: '24px', border: '1px solid #1F3326' }}>
             {[{ key: 'login', label: 'Sign In' }, { key: 'register', label: 'Create Account' }].map(t => (
               <button
