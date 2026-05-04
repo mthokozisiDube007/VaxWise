@@ -13,10 +13,25 @@ using System.Threading.RateLimiting;
 QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
+// Accept both URI format (postgresql://user:pass@host/db) and key-value format
+static string NormalizeConnectionString(string? cs)
+{
+    if (string.IsNullOrEmpty(cs)) return cs ?? "";
+    if (!cs.StartsWith("postgresql://") && !cs.StartsWith("postgres://")) return cs;
+    var uri = new Uri(cs);
+    var parts = uri.UserInfo.Split(':', 2);
+    var user = Uri.UnescapeDataString(parts[0]);
+    var pass = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
+    var db = uri.AbsolutePath.TrimStart('/');
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    return $"Host={uri.Host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require";
+}
+
 // Register database context
+var connectionString = NormalizeConnectionString(
+    builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration
-        .GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Add before builder.Build()
 builder.Services.AddRateLimiter(options =>
