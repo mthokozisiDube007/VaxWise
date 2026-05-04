@@ -14,17 +14,40 @@ QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 // Accept both URI format (postgresql://user:pass@host/db) and key-value format
+// Manual parser avoids System.Uri breaking on special characters (@ # ?) in passwords
 static string NormalizeConnectionString(string? cs)
 {
     if (string.IsNullOrEmpty(cs)) return cs ?? "";
     if (!cs.StartsWith("postgresql://") && !cs.StartsWith("postgres://")) return cs;
-    var uri = new Uri(cs);
-    var parts = uri.UserInfo.Split(':', 2);
-    var user = Uri.UnescapeDataString(parts[0]);
-    var pass = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
-    var db = uri.AbsolutePath.TrimStart('/');
-    var port = uri.Port > 0 ? uri.Port : 5432;
-    return $"Host={uri.Host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require";
+
+    var rest = cs.StartsWith("postgresql://") ? cs[13..] : cs[11..];
+
+    // Find the last @ before the first / — handles passwords containing @
+    var firstSlash = rest.IndexOf('/');
+    var atIdx = firstSlash > 0 ? rest.LastIndexOf('@', firstSlash - 1) : rest.LastIndexOf('@');
+
+    var userInfo = atIdx >= 0 ? rest[..atIdx] : "";
+    var hostPart = atIdx >= 0 ? rest[(atIdx + 1)..] : rest;
+
+    // user:password (split on first colon only)
+    var colonIdx = userInfo.IndexOf(':');
+    var user = Uri.UnescapeDataString(colonIdx >= 0 ? userInfo[..colonIdx] : userInfo);
+    var pass = colonIdx >= 0 ? Uri.UnescapeDataString(userInfo[(colonIdx + 1)..]) : "";
+
+    // host:port/database?query
+    var pathIdx = hostPart.IndexOf('/');
+    var hostPort = pathIdx >= 0 ? hostPart[..pathIdx] : hostPart;
+    var pathQuery = pathIdx >= 0 ? hostPart[(pathIdx + 1)..] : "";
+
+    var portColon = hostPort.LastIndexOf(':');
+    var host = portColon >= 0 ? hostPort[..portColon] : hostPort;
+    var port = portColon >= 0 ? hostPort[(portColon + 1)..] : "5432";
+
+    var queryIdx = pathQuery.IndexOf('?');
+    var db = (queryIdx >= 0 ? pathQuery[..queryIdx] : pathQuery).Trim('/');
+    if (string.IsNullOrEmpty(db)) db = "postgres";
+
+    return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require";
 }
 
 // Register database context
