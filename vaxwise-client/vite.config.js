@@ -6,10 +6,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Separate vendor chunks for better long-term caching
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-query': ['@tanstack/react-query'],
+        manualChunks: (id) => {
+          if (id.includes('react-dom') || id.includes('react-router-dom') || id.includes('node_modules/react/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('@tanstack/react-query')) {
+            return 'vendor-query';
+          }
         },
       },
     },
