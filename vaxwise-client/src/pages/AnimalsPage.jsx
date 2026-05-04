@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAllAnimals, createAnimal, deleteAnimal } from '../api/animalsApi';
+import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv } from '../api/animalsApi';
 import { useAuth } from '../context/AuthContext';
 
 const S = {
@@ -23,7 +23,10 @@ export default function AnimalsPage() {
   const { hasRole } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [form, setForm] = useState({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ breed: '', currentWeightKg: 0, status: 'Active' });
 
   const { data: animals = [], isLoading } = useQuery({ queryKey: ['animals'], queryFn: getAllAnimals });
 
@@ -34,6 +37,11 @@ export default function AnimalsPage() {
       setShowForm(false);
       setForm({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
     },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateAnimal,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['animals'] }); setEditingId(null); },
   });
 
   const deleteMutation = useMutation({ mutationFn: deleteAnimal, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['animals'] }) });
@@ -49,14 +57,23 @@ export default function AnimalsPage() {
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Animal Registry</h1>
           <p style={{ color: '#8C8677', fontSize: '14px' }}>{animals.length} animal{animals.length !== 1 ? 's' : ''} registered</p>
         </div>
-        {(hasRole('FarmOwner') || hasRole('FarmManager')) && (
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
-            onClick={() => setShowForm(!showForm)}
-            style={{ padding: '10px 22px', background: showForm ? 'transparent' : '#22C55E', color: showForm ? '#22C55E' : '#0B1F14', border: showForm ? '1.5px solid #22C55E' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
+            onClick={async () => { setExporting(true); try { await exportAnimalsCsv(); } finally { setExporting(false); } }}
+            disabled={exporting}
+            style={{ background: 'none', border: '1px solid #2D4A34', color: '#8C8677', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: '600', cursor: exporting ? 'wait' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
           >
-            {showForm ? 'Cancel' : '+ Register Animal'}
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
-        )}
+          {(hasRole('FarmOwner') || hasRole('FarmManager')) && (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              style={{ padding: '10px 22px', background: showForm ? 'transparent' : '#22C55E', color: showForm ? '#22C55E' : '#0B1F14', border: showForm ? '1.5px solid #22C55E' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
+            >
+              {showForm ? 'Cancel' : '+ Register Animal'}
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (
@@ -153,11 +170,25 @@ export default function AnimalsPage() {
                   <tr key={animal.animalId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
                     <td style={{ ...S.td, fontWeight: '700', color: '#22C55E', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>{animal.earTagNumber}</td>
                     <td style={S.td}>{animal.animalTypeName}</td>
-                    <td style={S.td}>{animal.breed}</td>
-                    <td style={S.td}>{animal.gender === 'M' ? 'Male' : 'Female'}</td>
-                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>{animal.currentWeightKg} kg</td>
                     <td style={S.td}>
-                      <span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{st.label}</span>
+                      {editingId === animal.animalId
+                        ? <input value={editForm.breed} onChange={e => setEditForm(f => ({ ...f, breed: e.target.value }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '13px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                        : animal.breed}
+                    </td>
+                    <td style={S.td}>{animal.gender === 'M' ? 'Male' : 'Female'}</td>
+                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>
+                      {editingId === animal.animalId
+                        ? <input type="number" value={editForm.currentWeightKg} onChange={e => setEditForm(f => ({ ...f, currentWeightKg: parseFloat(e.target.value) }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '13px', width: '80px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                        : `${animal.currentWeightKg} kg`}
+                    </td>
+                    <td style={S.td}>
+                      {editingId === animal.animalId ? (
+                        <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '12px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}>
+                          {Object.keys(STATUS).map(s => <option key={s} value={s} style={{ background: '#162219' }}>{s}</option>)}
+                        </select>
+                      ) : (
+                        <span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{st.label}</span>
+                      )}
                     </td>
                     <td style={S.td}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -168,13 +199,29 @@ export default function AnimalsPage() {
                       </div>
                     </td>
                     <td style={S.td}>
-                      {hasRole('Admin') && (
-                        <button
-                          onClick={() => deleteMutation.mutate(animal.animalId)}
-                          style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
-                        >
-                          Delete
-                        </button>
+                      {editingId === animal.animalId ? (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={() => updateMutation.mutate({ id: animal.animalId, ...editForm })}
+                            disabled={updateMutation.isPending}
+                            style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
+                          <button onClick={() => setEditingId(null)}
+                            style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {(hasRole('FarmOwner') || hasRole('FarmManager')) && (
+                            <button
+                              onClick={() => { setEditingId(animal.animalId); setEditForm({ breed: animal.breed, currentWeightKg: animal.currentWeightKg, status: animal.status }); }}
+                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}
+                            >Edit</button>
+                          )}
+                          {hasRole('Admin') && (
+                            <button
+                              onClick={() => deleteMutation.mutate(animal.animalId)}
+                              style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
+                            >Delete</button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

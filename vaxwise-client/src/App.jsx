@@ -5,6 +5,10 @@ import Layout from './components/Layout';
 
 // Route-level code splitting — each page is a separate chunk loaded on demand
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
+const PublicVerifyPage = lazy(() => import('./pages/PublicVerifyPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const AnimalsPage = lazy(() => import('./pages/AnimalsPage'));
 const VaccinationsPage = lazy(() => import('./pages/VaccinationsPage'));
@@ -29,7 +33,14 @@ export default function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
+        {/* Public routes — no auth required */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/accept" element={<AcceptInvitationPage />} />
+        <Route path="/verify/:certId" element={<PublicVerifyPage />} />
+
+        {/* Protected app routes */}
         <Route path="/" element={
           <ProtectedRoute>
             <Layout />

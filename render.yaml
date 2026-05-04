@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vaxwise-api
+    runtime: dotnet
+    buildCommand: dotnet publish VaxWise.API/VaxWise.API.csproj -c Release -o out
+    startCommand: dotnet out/VaxWise.API.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: JwtSettings__SecretKey
+        sync: false
+      - key: JwtSettings__Issuer
+        value: VaxWise.API
+      - key: JwtSettings__Audience
+        value: VaxWise.Client
+      - key: JwtSettings__ExpiryHours
+        value: "24"
+      - key: AllowedOrigins__0
+        sync: false

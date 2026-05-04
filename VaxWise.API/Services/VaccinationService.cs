@@ -120,6 +120,106 @@ namespace VaxWise.API.Services
             return results;
         }
 
+        public async Task<BatchVaccinationResultDto> BatchCaptureAsync(
+            BatchVaccinationDto dto, string savcNumber, int farmId)
+        {
+            var successful = new List<VaccinationResponseDto>();
+            var failures = new List<BatchVaccinationFailureDto>();
+
+            foreach (var animalId in dto.AnimalIds)
+            {
+                try
+                {
+                    var single = new CreateVaccinationDto
+                    {
+                        AnimalId = animalId,
+                        VaccineBatch = dto.VaccineBatch,
+                        VaccineName = dto.VaccineName,
+                        ExpiryDate = dto.ExpiryDate,
+                        Manufacturer = dto.Manufacturer,
+                        GpsCoordinates = dto.GpsCoordinates,
+                        NextDueDate = dto.NextDueDate,
+                        CaptureMode = "Batch"
+                    };
+                    successful.Add(await CaptureAsync(single, savcNumber, farmId));
+                }
+                catch (Exception ex)
+                {
+                    failures.Add(new BatchVaccinationFailureDto { AnimalId = animalId, Reason = ex.Message });
+                }
+            }
+
+            return new BatchVaccinationResultDto
+            {
+                SuccessCount = successful.Count,
+                FailureCount = failures.Count,
+                Successful = successful,
+                Failures = failures
+            };
+        }
+
+        public async Task<List<HerdImmunityResultDto>> GetHerdImmunityAsync(int farmId)
+        {
+            var animals = await _context.Animals
+                .AsNoTracking()
+                .Include(a => a.AnimalType)
+                .Where(a => a.FarmId == farmId && a.Status == "Active")
+                .ToListAsync();
+
+            if (animals.Count == 0) return new List<HerdImmunityResultDto>();
+
+            var animalIds = animals.Select(a => a.AnimalId).ToList();
+
+            var allEvents = await _context.VaccinationEvents
+                .AsNoTracking()
+                .Where(e => animalIds.Contains(e.AnimalId))
+                .ToListAsync();
+
+            var schedules = await _context.VaccineSchedules
+                .AsNoTracking()
+                .Where(s => s.IsNotifiable)
+                .ToListAsync();
+
+            return HerdImmunityEstimator.Compute(animals, allEvents, schedules, DateTime.UtcNow);
+        }
+
+        public async Task<string> ExportCsvAsync(int farmId)
+        {
+            var events = await _context.VaccinationEvents
+                .AsNoTracking()
+                .Include(v => v.Animal)
+                .Where(v => v.FarmId == farmId)
+                .OrderByDescending(v => v.EventTimestamp)
+                .ToListAsync();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("EventId,AnimalEarTag,VaccineName,VaccineBatch,Manufacturer,GpsCoordinates,EventDate,NextDueDate,CaptureMode,AuditHash");
+
+            foreach (var v in events)
+            {
+                sb.AppendLine(string.Join(",",
+                    v.EventId,
+                    CsvEscape(v.Animal.EarTagNumber),
+                    CsvEscape(v.VaccineName),
+                    CsvEscape(v.VaccineBatch),
+                    CsvEscape(v.Manufacturer),
+                    CsvEscape(v.GpsCoordinates),
+                    v.EventTimestamp.ToString("yyyy-MM-dd"),
+                    v.NextDueDate.ToString("yyyy-MM-dd"),
+                    v.CaptureMode,
+                    v.AuditHash));
+            }
+
+            return sb.ToString();
+        }
+
+        private static string CsvEscape(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            return value;
+        }
+
         private async Task<DateTime> ResolveNextDueDateAsync(
             string vaccineName, int animalTypeId, DateTime eventTimestamp)
         {

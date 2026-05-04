@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { getLoginStats } from '../api/adminApi';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getLoginStats, getAdminFarms, toggleFarmActive } from '../api/adminApi';
 
 const S = {
   card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
@@ -9,6 +10,7 @@ const S = {
 
 const msColor = (ms) => ms <= 100 ? '#22C55E' : ms <= 300 ? '#F59E0B' : '#EF4444';
 const msLabel = (ms) => ms <= 100 ? 'Fast' : ms <= 300 ? 'Acceptable' : 'Slow';
+const scoreColor = (s) => s >= 75 ? '#22C55E' : s >= 50 ? '#F59E0B' : '#EF4444';
 
 function StatCard({ label, value, sub, color, topBorder }) {
   return (
@@ -24,7 +26,6 @@ function HourlyChart({ hours }) {
   if (!hours?.length) return null;
   const maxTotal = Math.max(...hours.map(h => h.total), 1);
   const now = new Date().getUTCHours();
-
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '64px' }}>
@@ -48,39 +49,21 @@ function HourlyChart({ hours }) {
   );
 }
 
-export default function AdminPage() {
+function LoginMonitorTab() {
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin-login-stats'],
     queryFn: getLoginStats,
-    staleTime: 30_000,       // refresh every 30 seconds for live monitoring
+    staleTime: 30_000,
     refetchInterval: 30_000,
   });
 
-  if (isLoading) return (
-    <div style={{ padding: '40px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading login metrics…</div>
-  );
-
-  if (error) return (
-    <div style={{ padding: '40px', color: '#EF4444', fontFamily: "'DM Sans', sans-serif" }}>
-      Failed to load admin data. Ensure you are logged in as Admin.
-    </div>
-  );
+  if (isLoading) return <div style={{ padding: '40px', color: '#8C8677' }}>Loading login metrics…</div>;
+  if (error) return <div style={{ padding: '40px', color: '#EF4444' }}>Failed to load admin data.</div>;
 
   const avgColor = msColor(stats.avgResponseTimeMs24h);
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>
-          Login Performance Monitor
-        </h1>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>
-          Real-time authentication metrics · auto-refreshes every 30 s
-        </p>
-      </div>
-
-      {/* 24-hour KPI row */}
+    <>
       <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>Last 24 Hours</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         <StatCard label="Total Logins" value={stats.totalLogins24h} sub="authentication attempts" color="#F0EDE8" topBorder="#22C55E" />
@@ -95,9 +78,7 @@ export default function AdminPage() {
           color={avgColor} topBorder={avgColor} />
       </div>
 
-      {/* 7-day summary + hourly chart */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        {/* 7-day summary */}
         <div style={S.card}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '20px' }}>7-Day Summary</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -105,7 +86,7 @@ export default function AdminPage() {
               { label: 'Total', value: stats.totalLogins7d },
               { label: 'Successful', value: stats.successfulLogins7d, color: '#22C55E' },
               { label: 'Failed', value: stats.failedLogins7d, color: stats.failedLogins7d > 0 ? '#EF4444' : '#22C55E' },
-              { label: 'Unique Users', value: stats.uniqueUsers7d, color: '#F0EDE8' },
+              { label: 'Unique Users', value: stats.uniqueUsers7d },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: '#162219', borderRadius: '8px', padding: '14px 16px', border: '1px solid #1F3326' }}>
                 <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{label}</p>
@@ -121,14 +102,9 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Hourly activity chart */}
         <div style={S.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-            <div>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '2px' }}>Hourly Activity</h3>
-              <p style={{ fontSize: '12px', color: '#8C8677' }}>Last 24 hours · UTC · red = failures present</p>
-            </div>
-          </div>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '2px' }}>Hourly Activity</h3>
+          <p style={{ fontSize: '12px', color: '#8C8677', marginBottom: '20px' }}>Last 24 hours · UTC · red = failures present</p>
           <HourlyChart hours={stats.hourlyBreakdown24h} />
           <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
             {[['#22C55E', 'Successful hour'], ['#EF4444', 'Failures detected'], ['#177A3E', 'Past hours']].map(([color, label]) => (
@@ -141,7 +117,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Recent login log table */}
       <div style={S.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
@@ -152,7 +127,6 @@ export default function AdminPage() {
             {stats.recentLogs?.length ?? 0} entries
           </span>
         </div>
-
         {!stats.recentLogs?.length ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
             <p style={{ fontSize: '14px' }}>No login attempts recorded yet.</p>
@@ -161,11 +135,7 @@ export default function AdminPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr>
-                  {['Time (UTC)', 'Email', 'Status', 'Role', 'Response', 'IP Address', 'User Agent'].map(h => (
-                    <th key={h} style={S.th}>{h}</th>
-                  ))}
-                </tr>
+                <tr>{['Time (UTC)', 'Email', 'Status', 'Role', 'Response', 'IP Address', 'User Agent'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {stats.recentLogs.map((log, i) => {
@@ -175,18 +145,15 @@ export default function AdminPage() {
                       <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#8C8677', whiteSpace: 'nowrap' }}>
                         {new Date(log.attemptedAt).toLocaleString('en-ZA', { timeZone: 'UTC', hour12: false })}
                       </td>
-                      <td style={{ ...S.td, fontWeight: '600', color: '#F0EDE8' }}>{log.email}</td>
+                      <td style={{ ...S.td, fontWeight: '600' }}>{log.email}</td>
                       <td style={S.td}>
-                        {log.success ? (
-                          <span style={{ background: '#052E16', color: '#22C55E', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>Success</span>
-                        ) : (
-                          <span style={{ background: '#450A0A', color: '#EF4444', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }} title={log.failureReason ?? ''}>Failed</span>
-                        )}
+                        {log.success
+                          ? <span style={{ background: '#052E16', color: '#22C55E', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>Success</span>
+                          : <span style={{ background: '#450A0A', color: '#EF4444', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }} title={log.failureReason ?? ''}>Failed</span>}
                       </td>
                       <td style={{ ...S.td, color: '#8C8677', fontSize: '12px' }}>{log.role || '—'}</td>
                       <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color }}>
-                        {log.responseTimeMs} ms
-                        <span style={{ fontSize: '10px', marginLeft: '4px', color: '#4A4A42' }}>({msLabel(log.responseTimeMs)})</span>
+                        {log.responseTimeMs} ms <span style={{ fontSize: '10px', marginLeft: '4px', color: '#4A4A42' }}>({msLabel(log.responseTimeMs)})</span>
                       </td>
                       <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#8C8677' }}>{log.ipAddress}</td>
                       <td style={{ ...S.td, fontSize: '12px', color: '#4A4A42', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -200,6 +167,172 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+function FarmsTab() {
+  const queryClient = useQueryClient();
+  const [toggling, setToggling] = useState(null);
+
+  const { data: farms, isLoading, error } = useQuery({
+    queryKey: ['admin-farms'],
+    queryFn: getAdminFarms,
+    staleTime: 30_000,
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: toggleFarmActive,
+    onMutate: (farmId) => setToggling(farmId),
+    onSettled: () => {
+      setToggling(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-farms'] });
+    },
+  });
+
+  if (isLoading) return <div style={{ padding: '40px', color: '#8C8677' }}>Loading farms…</div>;
+  if (error) return <div style={{ padding: '40px', color: '#EF4444' }}>Failed to load farms.</div>;
+
+  const total = farms?.length ?? 0;
+  const active = farms?.filter(f => f.isActive).length ?? 0;
+  const inactive = total - active;
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <StatCard label="Total Farms" value={total} sub="registered on platform" color="#F0EDE8" topBorder="#22C55E" />
+        <StatCard label="Active" value={active} sub="currently operational" color="#22C55E" topBorder="#22C55E" />
+        <StatCard label="Inactive" value={inactive} sub="deactivated by admin" color={inactive > 0 ? '#F59E0B' : '#8C8677'} topBorder={inactive > 0 ? '#F59E0B' : '#2D4A34'} />
+      </div>
+
+      <div style={S.card}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>All Farms</h3>
+            <p style={{ fontSize: '12px', color: '#8C8677' }}>Click toggle to activate or deactivate a farm</p>
+          </div>
+          <span style={{ background: '#1A2B1F', color: '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #2D4A34' }}>
+            {total} farms
+          </span>
+        </div>
+
+        {!farms?.length ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
+            <p style={{ fontSize: '14px' }}>No farms registered yet.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Farm', 'Owner', 'Province', 'Type', 'Animals', 'Workers', 'Avg Compliance', 'Registered', 'Status', 'Action'].map(h => (
+                    <th key={h} style={S.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {farms.map((farm, i) => (
+                  <tr key={farm.farmId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
+                    <td style={{ ...S.td, fontWeight: '600' }}>
+                      {farm.farmName}
+                      {farm.glnNumber && <div style={{ fontSize: '11px', color: '#4A4A42', marginTop: '2px' }}>GLN: {farm.glnNumber}</div>}
+                    </td>
+                    <td style={S.td}>
+                      <div style={{ fontWeight: '600' }}>{farm.ownerName}</div>
+                      <div style={{ fontSize: '11px', color: '#4A4A42' }}>{farm.ownerEmail}</div>
+                    </td>
+                    <td style={{ ...S.td, color: '#8C8677' }}>{farm.province}</td>
+                    <td style={{ ...S.td, color: '#8C8677' }}>{farm.farmType}</td>
+                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", textAlign: 'center' }}>{farm.animalCount}</td>
+                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", textAlign: 'center' }}>{farm.workerCount}</td>
+                    <td style={S.td}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, height: '4px', background: '#1F3326', borderRadius: '2px', overflow: 'hidden', minWidth: '60px' }}>
+                          <div style={{ height: '100%', width: `${farm.averageComplianceScore}%`, background: scoreColor(farm.averageComplianceScore), borderRadius: '2px' }} />
+                        </div>
+                        <span style={{ fontSize: '12px', color: scoreColor(farm.averageComplianceScore), fontWeight: '600', whiteSpace: 'nowrap' }}>
+                          {farm.averageComplianceScore}%
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ ...S.td, fontSize: '12px', color: '#8C8677', whiteSpace: 'nowrap' }}>
+                      {new Date(farm.createdAt).toLocaleDateString('en-ZA')}
+                    </td>
+                    <td style={S.td}>
+                      <span style={{
+                        background: farm.isActive ? '#052E16' : '#1C1008',
+                        color: farm.isActive ? '#22C55E' : '#F59E0B',
+                        padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700'
+                      }}>
+                        {farm.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td style={S.td}>
+                      <button
+                        onClick={() => toggleMutation.mutate(farm.farmId)}
+                        disabled={toggling === farm.farmId}
+                        style={{
+                          background: farm.isActive ? '#450A0A' : '#052E16',
+                          color: farm.isActive ? '#EF4444' : '#22C55E',
+                          border: `1px solid ${farm.isActive ? '#7F1D1D' : '#166534'}`,
+                          borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: '600',
+                          cursor: toggling === farm.farmId ? 'wait' : 'pointer',
+                          opacity: toggling === farm.farmId ? 0.6 : 1,
+                          transition: 'opacity 0.2s',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >
+                        {toggling === farm.farmId ? '…' : farm.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState('login');
+
+  const tabs = [
+    { id: 'login', label: 'Login Monitor' },
+    { id: 'farms', label: 'Farm Management' },
+  ];
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>
+          Admin Panel
+        </h1>
+        <p style={{ color: '#8C8677', fontSize: '14px' }}>Platform oversight and farm management</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '28px', background: '#0B1F14', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: '8px 20px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif", fontSize: '13px', fontWeight: '600',
+              background: activeTab === tab.id ? '#22C55E' : 'transparent',
+              color: activeTab === tab.id ? '#0B1F14' : '#8C8677',
+              transition: 'all 0.15s',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'login' && <LoginMonitorTab />}
+      {activeTab === 'farms' && <FarmsTab />}
     </div>
   );
 }

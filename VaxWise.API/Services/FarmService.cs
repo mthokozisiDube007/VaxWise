@@ -135,11 +135,11 @@ namespace VaxWise.API.Services
             _context.WorkerInvitations.Add(invitation);
             await _context.SaveChangesAsync();
 
-            // Build invitation link
-            var baseUrl = _config["AppSettings:BaseUrl"]
-                ?? "https://localhost:7232";
+            // Build invitation link — points to the frontend accept page
+            var frontendBaseUrl = _config["AppSettings:FrontendBaseUrl"]
+                ?? "http://localhost:5173";
             var invitationLink =
-                $"{baseUrl}/accept-invitation/{token}";
+                $"{frontendBaseUrl}/accept?token={token}";
 
             // In production this sends an actual email
             // For now we return the link so you can test it

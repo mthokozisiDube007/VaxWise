@@ -51,19 +51,28 @@ namespace VaxWise.API.Services
                 .Select(d => (d.VaccineName, d.DiseaseName, d.ReportingWindowHours))
                 .ToList<(string Keyword, string DiseaseName, int ReportingWindowHours)>();
 
-            var mostReported = recentRecords
-                .GroupBy(h => h.Symptoms)
-                .OrderByDescending(g => g.Count())
-                .First();
-
             var records = recentRecords
                 .Select(r => (r, r.Animal.EarTagNumber))
                 .ToList();
 
-            var alert = OutbreakDetectionEngine.Analyse(
-                mostReported.Key, records, totalAnimals, notifiableList);
+            // Check all symptom groups; prefer notifiable disease over raw volume
+            var symptomGroups = recentRecords
+                .GroupBy(h => h.Symptoms)
+                .OrderByDescending(g => g.Count());
 
-            if (!alert.IsNotifiable) return null;
+            OutbreakAlertDto? alert = null;
+            foreach (var group in symptomGroups)
+            {
+                var candidate = OutbreakDetectionEngine.Analyse(
+                    group.Key, records, totalAnimals, notifiableList);
+                if (candidate.IsNotifiable)
+                {
+                    alert = candidate;
+                    break;
+                }
+            }
+
+            if (alert == null || !alert.IsNotifiable) return null;
 
             var affectedTags = alert.AffectedEarTags.ToHashSet();
             var affectedRecords = recentRecords

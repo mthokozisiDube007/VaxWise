@@ -69,7 +69,8 @@ namespace VaxWise.API.Algorithms
 
             foreach (var (keyword, diseaseName, reportingWindowHours) in notifiableDiseases)
             {
-                if (triggerTokens.Contains(keyword, StringComparer.OrdinalIgnoreCase))
+                var keywordTokens = Tokenise(keyword);
+                if (keywordTokens.Overlaps(triggerTokens))
                 {
                     isNotifiable = true;
                     notifiableDiseaseName = diseaseName;

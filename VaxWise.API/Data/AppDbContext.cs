@@ -115,6 +115,20 @@ namespace VaxWise.API.Data
                 .WithMany()
                 .HasForeignKey(wi => wi.InvitedByUserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Performance indexes
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.PasswordResetToken);
+
+            modelBuilder.Entity<LoginAuditLog>()
+                .HasIndex(l => l.AttemptedAt);
+
+            modelBuilder.Entity<LoginAuditLog>()
+                .HasIndex(l => new { l.AttemptedAt, l.Success });
         }
     }
 }

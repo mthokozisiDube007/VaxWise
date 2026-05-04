@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register database context
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration
+    options.UseNpgsql(builder.Configuration
         .GetConnectionString("DefaultConnection")));
 
 // Add before builder.Build()
@@ -55,6 +55,7 @@ builder.Services.AddScoped<IFarmService, FarmService>();
 builder.Services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ILoginAuditService, LoginAuditService>();
+builder.Services.AddScoped<IAdminFarmService, AdminFarmService>();
 
 // Configure JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -77,11 +78,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 // Cors policy for frontend access
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("VaxWiseClient", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

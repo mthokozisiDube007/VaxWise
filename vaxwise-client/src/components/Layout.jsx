@@ -1,7 +1,9 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getFarms } from '../api/farmsApi';
+
+const FARM_FREE_ROUTES = ['/farms', '/settings', '/admin'];
 
 const NAV_GROUPS = [
   {
@@ -42,11 +44,13 @@ const inactiveStyle = {
 export default function Layout() {
   const { user, logout, hasRole, activeFarmId, selectFarm } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const userName = user?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'User';
   const userRole = user?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '';
   const needsFarmSelect = hasRole('FarmOwner') || hasRole('Admin');
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const farmGateActive = needsFarmSelect && !activeFarmId && !FARM_FREE_ROUTES.includes(pathname);
 
   const { data: farms = [] } = useQuery({ queryKey: ['farms'], queryFn: getFarms, enabled: needsFarmSelect });
 
@@ -137,13 +141,18 @@ export default function Layout() {
 
       {/* Main content */}
       <main style={{ flex: 1, background: '#111812', overflowY: 'auto' }}>
-        {needsFarmSelect && !activeFarmId ? (
+        {farmGateActive ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '40px' }}>
             <div style={{ background: '#1A2B1F', borderRadius: '20px', padding: '48px 40px', border: '1px solid #2D4A34', textAlign: 'center', maxWidth: '400px' }}>
               <div style={{ width: '60px', height: '60px', background: '#162219', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', margin: '0 auto 20px', border: '1px solid #2D4A34' }}>🏡</div>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', color: '#F0EDE8', marginBottom: '10px' }}>Select a Farm</h2>
               <p style={{ color: '#8C8677', fontSize: '14px', lineHeight: '1.6' }}>Choose a farm from the sidebar to begin managing your livestock data.</p>
-              {farms.length === 0 && <p style={{ color: '#EF4444', marginTop: '16px', fontSize: '13px' }}>No farms yet. Create one in Farms.</p>}
+              {farms.length === 0 && (
+                <p style={{ color: '#EF4444', marginTop: '16px', fontSize: '13px' }}>
+                  No farms yet.{' '}
+                  <NavLink to="/farms" style={{ color: '#22C55E', textDecoration: 'underline' }}>Create one here.</NavLink>
+                </p>
+              )}
             </div>
           </div>
         ) : (

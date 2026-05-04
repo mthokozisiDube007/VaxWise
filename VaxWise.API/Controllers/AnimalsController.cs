@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 using VaxWise.API.Data;
 using VaxWise.API.DTOs;
 using VaxWise.API.Helpers;
@@ -68,6 +69,15 @@ namespace VaxWise.API.Controllers
             var result = await _animalService.DeleteAsync(id, farmId);
             if (!result) return NotFound(new { message = "Animal not found" });
             return Ok(new { message = "Animal deleted" });
+        }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportCsv()
+        {
+            var farmId = await GetFarmId();
+            var csv = await _animalService.ExportCsvAsync(farmId);
+            var bytes = Encoding.UTF8.GetBytes(csv);
+            return File(bytes, "text/csv", $"animals-{DateTime.UtcNow:yyyyMMdd}.csv");
         }
     }
 }

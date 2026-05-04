@@ -95,6 +95,46 @@ namespace VaxWise.API.Services
             return true;
         }
 
+        public async Task<string> ExportCsvAsync(int farmId)
+        {
+            var animals = await _context.Animals
+                .AsNoTracking()
+                .Include(a => a.AnimalType)
+                .Where(a => a.FarmId == farmId)
+                .OrderBy(a => a.EarTagNumber)
+                .ToListAsync();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("AnimalId,EarTag,RfidTag,AnimalType,Breed,DateOfBirth,Gender,WeightKg,Status,ComplianceScore,PurchaseDate,PurchasePrice,RegisteredAt");
+
+            foreach (var a in animals)
+            {
+                sb.AppendLine(string.Join(",",
+                    a.AnimalId,
+                    CsvEscape(a.EarTagNumber),
+                    CsvEscape(a.RfidTag),
+                    CsvEscape(a.AnimalType?.TypeName ?? ""),
+                    CsvEscape(a.Breed),
+                    a.DateOfBirth.ToString("yyyy-MM-dd"),
+                    a.Gender,
+                    a.CurrentWeightKg,
+                    a.Status,
+                    a.ComplianceScore,
+                    a.PurchaseDate.ToString("yyyy-MM-dd"),
+                    a.PurchasePrice,
+                    a.CreatedAt.ToString("yyyy-MM-dd")));
+            }
+
+            return sb.ToString();
+        }
+
+        private static string CsvEscape(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            return value;
+        }
+
         // AnimalType must be eagerly loaded by all callers via .Include(a => a.AnimalType)
         private static AnimalResponseDto MapToResponseDto(Animal animal) => new()
         {

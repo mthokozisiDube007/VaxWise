@@ -40,7 +40,7 @@ namespace VaxWise.API.Services
 
             if (emailExists) return null;
 
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 10);
 
             var user = new User
             {

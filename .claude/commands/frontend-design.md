@@ -335,6 +335,35 @@ export default function SomePage() {
 
 ---
 
+## 11. Common Parse Errors to Avoid
+
+### Mixed quotes in `fontFamily` inline styles (causes Vite parse failure)
+
+JSX inline style string values use **double quotes** as the outer delimiter. `fontFamily` contains single-quoted font names inside — the outer delimiter must stay double-quoted and must not be closed early by a stray single quote.
+
+**Wrong — unterminated string, Vite will refuse to compile:**
+```jsx
+// Trailing ' closes the double-quoted string too early
+style={{ fontFamily: "'DM Sans', sans-serif' }}
+//                                          ↑ stray single quote
+```
+
+**Correct:**
+```jsx
+style={{ fontFamily: "'DM Sans', sans-serif" }}
+//                                          ↑ double quote closes correctly
+```
+
+**Rule**: every `fontFamily` value must end with `", sans-serif"` (double quote last), never `', sans-serif'` or `', sans-serif"`. Apply this to all font stacks:
+
+```jsx
+fontFamily: "'DM Sans', sans-serif"
+fontFamily: "'Playfair Display', serif"
+fontFamily: "'JetBrains Mono', monospace"
+```
+
+---
+
 ## 10. Applying This to VaxWise
 
 When a user asks to "redesign", "restyle", or "make it look better":

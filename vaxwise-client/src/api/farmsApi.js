@@ -10,6 +10,11 @@ export const createFarm = async (data) => {
   return r.data;
 };
 
+export const updateFarm = async ({ farmId, ...data }) => {
+  const r = await api.put(`/farms/${farmId}`, data);
+  return r.data;
+};
+
 export const getFarmWorkers = async (farmId) => {
   const r = await api.get(`/farms/${farmId}/workers`);
   return r.data;

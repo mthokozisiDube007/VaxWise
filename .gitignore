@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+!vaxwise-client/.env
+!vaxwise-client/.env.production
 
 # User-specific files
 *.rsuser

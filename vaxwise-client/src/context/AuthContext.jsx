@@ -1,34 +1,30 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext(null);
 
+function initAuth() {
+  const savedToken = localStorage.getItem('vaxwise_token');
+  if (!savedToken) return { token: null, user: null };
+  try {
+    const decoded = jwtDecode(savedToken);
+    if (decoded.exp * 1000 > Date.now()) return { token: savedToken, user: decoded };
+    localStorage.removeItem('vaxwise_token');
+    localStorage.removeItem('vaxwise_farm_id');
+  } catch {
+    localStorage.removeItem('vaxwise_token');
+    localStorage.removeItem('vaxwise_farm_id');
+  }
+  return { token: null, user: null };
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => initAuth().token);
+  const [user, setUser] = useState(() => initAuth().user);
   const [activeFarmId, setActiveFarmIdState] = useState(() => {
     const saved = localStorage.getItem('vaxwise_farm_id');
     return saved ? parseInt(saved) : null;
   });
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('vaxwise_token');
-    if (savedToken) {
-      try {
-        const decoded = jwtDecode(savedToken);
-        if (decoded.exp * 1000 > Date.now()) {
-          setToken(savedToken);
-          setUser(decoded);
-        } else {
-          localStorage.removeItem('vaxwise_token');
-          localStorage.removeItem('vaxwise_farm_id');
-        }
-      } catch {
-        localStorage.removeItem('vaxwise_token');
-        localStorage.removeItem('vaxwise_farm_id');
-      }
-    }
-  }, []);
 
   const login = (newToken) => {
     localStorage.setItem('vaxwise_token', newToken);

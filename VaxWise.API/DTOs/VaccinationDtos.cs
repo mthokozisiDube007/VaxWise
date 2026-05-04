@@ -62,4 +62,56 @@ namespace VaxWise.API.DTOs
         [Required]
         public List<CreateVaccinationDto> Events { get; set; } = new();
     }
+
+    // Batch vaccinate multiple animals with shared vaccine details
+    public class BatchVaccinationDto
+    {
+        [Required]
+        public List<int> AnimalIds { get; set; } = new();
+
+        [Required]
+        public string VaccineBatch { get; set; } = string.Empty;
+
+        [Required]
+        public string VaccineName { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime ExpiryDate { get; set; }
+
+        [Required]
+        public string Manufacturer { get; set; } = string.Empty;
+
+        [Required]
+        public string GpsCoordinates { get; set; } = string.Empty;
+
+        public DateTime? NextDueDate { get; set; }
+    }
+
+    public class BatchVaccinationFailureDto
+    {
+        public int AnimalId { get; set; }
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class BatchVaccinationResultDto
+    {
+        public int SuccessCount { get; set; }
+        public int FailureCount { get; set; }
+        public List<VaccinationResponseDto> Successful { get; set; } = new();
+        public List<BatchVaccinationFailureDto> Failures { get; set; } = new();
+    }
+
+    // Herd immunity coverage per vaccine per animal type
+    public class HerdImmunityResultDto
+    {
+        public string AnimalTypeName { get; set; } = string.Empty;
+        public string VaccineName { get; set; } = string.Empty;
+        public string DiseaseName { get; set; } = string.Empty;
+        public int TotalAnimals { get; set; }
+        public int ProtectedAnimals { get; set; }
+        public double CoveragePercent { get; set; }
+        public int ThresholdPercent { get; set; }
+        public bool IsProtected { get; set; }
+        public int AnimalsNeededForThreshold { get; set; }
+    }
 }

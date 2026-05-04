@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../api/authApi';
 
-const ROLES = ['FarmOwner', 'FarmManager', 'Worker', 'Vet', 'Government', 'Inspector'];
+// Only FarmOwner and Admin can self-register — all other roles are invitation-only
+const SELF_REGISTER_ROLES = ['FarmOwner', 'Admin'];
 
 const inp = {
   width: '100%', padding: '11px 14px', borderRadius: '8px',
@@ -28,7 +29,7 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [regForm, setRegForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', role: 'FarmOwner', savcNumber: '' });
+  const [regForm, setRegForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', role: 'FarmOwner' });
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState('');
   const [regLoading, setRegLoading] = useState(false);
@@ -36,9 +37,13 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginLoading(true); setLoginError('');
-    try { const data = await loginUser(loginForm.email, loginForm.password); login(data.token); navigate('/'); }
-    catch { setLoginError('Invalid email or password. Please try again.'); }
-    finally { setLoginLoading(false); }
+    try {
+      const data = await loginUser(loginForm.email, loginForm.password);
+      login(data.token);
+      navigate('/');
+    } catch (err) {
+      setLoginError(err?.response?.status === 401 ? 'Invalid email or password.' : 'Something went wrong. Please try again.');
+    } finally { setLoginLoading(false); }
   };
 
   const handleRegister = async (e) => {
@@ -46,10 +51,10 @@ export default function LoginPage() {
     if (regForm.password !== regForm.confirmPassword) { setRegError('Passwords do not match.'); return; }
     setRegLoading(true); setRegError(''); setRegSuccess('');
     try {
-      await registerUser({ fullName: regForm.fullName, email: regForm.email, password: regForm.password, role: regForm.role, ...(regForm.role === 'Vet' && regForm.savcNumber ? { savcNumber: regForm.savcNumber } : {}) });
-      setRegSuccess('Account created successfully.');
-      setRegForm({ fullName: '', email: '', password: '', confirmPassword: '', role: 'FarmOwner', savcNumber: '' });
-      setTimeout(() => { setTab('login'); setRegSuccess(''); }, 1800);
+      const data = await registerUser({ fullName: regForm.fullName, email: regForm.email, password: regForm.password, role: regForm.role });
+      setRegSuccess('Account created! Redirecting…');
+      login(data.token);
+      setTimeout(() => navigate('/farms'), 1000);
     } catch (err) { setRegError(err?.response?.data?.message || 'Registration failed. Email may already be in use.'); }
     finally { setRegLoading(false); }
   };
@@ -126,12 +131,15 @@ export default function LoginPage() {
                 >
                   {loginLoading ? 'Signing in…' : 'Sign In'}
                 </button>
+                <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#8C8677' }}>
+                  <Link to="/forgot-password" style={{ color: '#22C55E', textDecoration: 'none' }}>Forgot your password?</Link>
+                </p>
               </form>
             )}
             {tab === 'register' && (
               <form onSubmit={handleRegister}>
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#F0EDE8', marginBottom: '4px' }}>Create account</h2>
-                <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '24px' }}>Join VaxWise as a farm operator or vet</p>
+                <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '24px' }}>Register as a Farm Owner or Admin. Other roles join via invitation link.</p>
                 <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
                   <div>
                     <label style={lbl}>Full Name</label>
@@ -144,15 +152,9 @@ export default function LoginPage() {
                   <div>
                     <label style={lbl}>Role</label>
                     <select value={regForm.role} onChange={e => setR('role', e.target.value)} style={{ ...inp, cursor: 'pointer' }} onFocus={focusGreen} onBlur={blurGreen}>
-                      {ROLES.map(r => <option key={r} style={{ background: '#162219' }}>{r}</option>)}
+                      {SELF_REGISTER_ROLES.map(r => <option key={r} style={{ background: '#162219' }}>{r}</option>)}
                     </select>
                   </div>
-                  {regForm.role === 'Vet' && (
-                    <div>
-                      <label style={lbl}>SAVC Number</label>
-                      <input value={regForm.savcNumber} onChange={e => setR('savcNumber', e.target.value)} placeholder="e.g. SAVC-12345" style={inp} onFocus={focusGreen} onBlur={blurGreen} />
-                    </div>
-                  )}
                   <div>
                     <label style={lbl}>Password</label>
                     <input type="password" value={regForm.password} onChange={e => setR('password', e.target.value)} required minLength={6} style={inp} placeholder="Min. 6 characters" onFocus={focusGreen} onBlur={blurGreen} />

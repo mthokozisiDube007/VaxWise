@@ -9,5 +9,6 @@ namespace VaxWise.API.Services
         Task<AnimalResponseDto?> GetByIdAsync(int id, int farmId);
         Task<AnimalResponseDto?> UpdateAsync(int id, UpdateAnimalDto dto, int farmId);
         Task<bool> DeleteAsync(int id, int farmId);
+        Task<string> ExportCsvAsync(int farmId);
     }
 }
