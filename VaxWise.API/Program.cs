@@ -93,6 +93,14 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Auto-run migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // Global error handling middleware to catch unhandled exceptions and return a generic error response
 app.UseExceptionHandler(errorApp =>
 {
