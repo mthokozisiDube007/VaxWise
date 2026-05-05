@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv, updateAnimalWeight } from '../api/animalsApi';
 import { recordTreatment } from '../api/healthApi';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +26,7 @@ const SICK_FORM_INIT = { symptoms: '', severity: 'Mild', notes: '' };
 
 export default function AnimalsPage() {
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const isWorker = hasRole('FarmWorker');
   const isOwnerOrManager = hasRole('FarmOwner') || hasRole('FarmManager');
   const queryClient = useQueryClient();
@@ -212,7 +214,14 @@ export default function AnimalsPage() {
                 const scoreColor = score >= 80 ? '#22C55E' : score >= 60 ? '#F59E0B' : '#EF4444';
                 return (
                   <tr key={animal.animalId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                    <td style={{ ...S.td, fontWeight: '700', color: '#22C55E', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>{animal.earTagNumber}</td>
+                    <td style={{ ...S.td, fontWeight: '700', color: '#22C55E', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>
+                      {isOwnerOrManager ? (
+                        <button onClick={() => navigate(`/animals/${animal.animalId}`)}
+                          style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: '700', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', padding: 0, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                          {animal.earTagNumber}
+                        </button>
+                      ) : animal.earTagNumber}
+                    </td>
                     <td style={S.td}>{animal.animalTypeName}</td>
                     <td style={S.td}>
                       {editingId === animal.animalId

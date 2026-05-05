@@ -1,5 +1,10 @@
 import api from './axiosConfig';
 
+export const getAnimalById = async (id) => {
+  const r = await api.get(`/animals/${id}`);
+  return r.data;
+};
+
 export const getAllAnimals = async () => {
   const r = await api.get('/animals');
   return r.data;

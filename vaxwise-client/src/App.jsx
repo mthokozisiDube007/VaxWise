@@ -17,6 +17,7 @@ const CertificatesPage = lazy(() => import('./pages/CertificatesPage'));
 const FarmsPage = lazy(() => import('./pages/FarmsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const AnimalProfilePage = lazy(() => import('./pages/AnimalProfilePage'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#111812', color: '#8C8677', fontFamily: "'DM Sans', sans-serif", fontSize: '14px' }}>
@@ -48,6 +49,7 @@ export default function App() {
         }>
           <Route index element={<DashboardPage />} />
           <Route path="animals" element={<AnimalsPage />} />
+          <Route path="animals/:id" element={<AnimalProfilePage />} />
           <Route path="vaccinations" element={<VaccinationsPage />} />
           <Route path="health" element={<HealthPage />} />
           <Route path="certificates" element={<CertificatesPage />} />
