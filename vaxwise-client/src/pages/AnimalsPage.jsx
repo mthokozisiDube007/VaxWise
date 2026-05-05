@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv } from '../api/animalsApi';
+import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv, updateAnimalWeight } from '../api/animalsApi';
+import { recordTreatment } from '../api/healthApi';
 import { useAuth } from '../context/AuthContext';
 import { useMobile } from '../hooks/useMobile';
 
@@ -20,14 +21,26 @@ const STATUS = {
   Deceased: { bg: '#1A2B1F', color: '#4A4A42', label: 'Deceased' },
 };
 
+const SICK_FORM_INIT = { symptoms: '', severity: 'Mild', notes: '' };
+
 export default function AnimalsPage() {
   const { hasRole } = useAuth();
+  const isWorker = hasRole('FarmWorker');
+  const isOwnerOrManager = hasRole('FarmOwner') || hasRole('FarmManager');
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [form, setForm] = useState({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ breed: '', currentWeightKg: 0, status: 'Active' });
+  // Farm Worker — weight update
+  const [weightEditId, setWeightEditId] = useState(null);
+  const [weightValue, setWeightValue] = useState('');
+  // Farm Worker — report sick modal
+  const [sickAnimal, setSickAnimal] = useState(null);
+  const [sickForm, setSickForm] = useState(SICK_FORM_INIT);
+  const [sickSaving, setSickSaving] = useState(false);
+  const [sickError, setSickError] = useState('');
   const isMobile = useMobile();
 
   const { data: animals = [], isLoading } = useQuery({ queryKey: ['animals'], queryFn: getAllAnimals });
@@ -47,6 +60,35 @@ export default function AnimalsPage() {
   });
 
   const deleteMutation = useMutation({ mutationFn: deleteAnimal, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['animals'] }) });
+
+  const weightMutation = useMutation({
+    mutationFn: updateAnimalWeight,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['animals'] }); setWeightEditId(null); },
+  });
+
+  const handleReportSick = async () => {
+    if (!sickForm.symptoms.trim()) { setSickError('Please describe the symptoms.'); return; }
+    setSickSaving(true); setSickError('');
+    try {
+      await recordTreatment({
+        animalId: sickAnimal.animalId,
+        recordType: 'Sick Report',
+        symptoms: sickForm.symptoms,
+        diagnosis: 'Pending veterinary assessment',
+        medicationUsed: '',
+        dosage: '',
+        vetName: 'Farm Worker Report',
+        outcome: sickForm.notes || '',
+        treatmentDate: new Date().toISOString(),
+        withdrawalDays: 0,
+      });
+      queryClient.invalidateQueries({ queryKey: ['animals'] });
+      setSickAnimal(null);
+      setSickForm(SICK_FORM_INIT);
+    } catch (e) {
+      setSickError(e.response?.data?.message || 'Failed to submit report.');
+    } finally { setSickSaving(false); }
+  };
 
   if (isLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading animals…</div>
@@ -201,29 +243,47 @@ export default function AnimalsPage() {
                       </div>
                     </td>
                     <td style={S.td}>
-                      {editingId === animal.animalId ? (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={() => updateMutation.mutate({ id: animal.animalId, ...editForm })}
-                            disabled={updateMutation.isPending}
-                            style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
-                          <button onClick={() => setEditingId(null)}
-                            style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          {(hasRole('FarmOwner') || hasRole('FarmManager')) && (
-                            <button
-                              onClick={() => { setEditingId(animal.animalId); setEditForm({ breed: animal.breed, currentWeightKg: animal.currentWeightKg, status: animal.status }); }}
-                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}
-                            >Edit</button>
-                          )}
-                          {hasRole('Admin') && (
-                            <button
-                              onClick={() => deleteMutation.mutate(animal.animalId)}
-                              style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
-                            >Delete</button>
-                          )}
-                        </div>
+                      {/* Owner/Manager: full edit */}
+                      {isOwnerOrManager && (
+                        editingId === animal.animalId ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => updateMutation.mutate({ id: animal.animalId, ...editForm })} disabled={updateMutation.isPending}
+                              style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
+                            <button onClick={() => setEditingId(null)}
+                              style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => { setEditingId(animal.animalId); setEditForm({ breed: animal.breed, currentWeightKg: animal.currentWeightKg, status: animal.status }); }}
+                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Edit</button>
+                            {hasRole('Admin') && (
+                              <button onClick={() => deleteMutation.mutate(animal.animalId)}
+                                style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Delete</button>
+                            )}
+                          </div>
+                        )
+                      )}
+
+                      {/* Farm Worker: weight update + report sick */}
+                      {isWorker && (
+                        weightEditId === animal.animalId ? (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input type="number" value={weightValue} onChange={e => setWeightValue(e.target.value)}
+                              style={{ ...S.inp, padding: '4px 8px', fontSize: '13px', width: '72px' }}
+                              onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                            <button onClick={() => weightMutation.mutate({ id: animal.animalId, weightKg: parseFloat(weightValue) })} disabled={weightMutation.isPending}
+                              style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
+                            <button onClick={() => setWeightEditId(null)}
+                              style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>✕</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => { setWeightEditId(animal.animalId); setWeightValue(String(animal.currentWeightKg)); }}
+                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>⚖ Weight</button>
+                            <button onClick={() => { setSickAnimal(animal); setSickForm(SICK_FORM_INIT); setSickError(''); }}
+                              style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>🚨 Sick</button>
+                          </div>
+                        )
                       )}
                     </td>
                   </tr>
@@ -233,6 +293,60 @@ export default function AnimalsPage() {
           </div>
         )}
       </div>
+      {/* Report Sick Modal */}
+      {sickAnimal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
+          <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', border: '1px solid #1F3326' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#EF4444', marginBottom: '2px' }}>Report Sick Animal</h3>
+                <p style={{ fontSize: '13px', color: '#8C8677' }}>{sickAnimal.earTagNumber} · {sickAnimal.animalTypeName}</p>
+              </div>
+              <button onClick={() => setSickAnimal(null)} style={{ background: 'none', border: 'none', color: '#8C8677', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <label style={S.lbl}>Symptoms *</label>
+            <textarea
+              value={sickForm.symptoms}
+              onChange={e => setSickForm(f => ({ ...f, symptoms: e.target.value }))}
+              placeholder="Describe what you observed (e.g. limping, not eating, discharge)…"
+              rows={4}
+              style={{ ...S.inp, resize: 'vertical', marginBottom: '16px' }}
+              onFocus={e => e.target.style.borderColor = '#EF4444'} onBlur={e => e.target.style.borderColor = '#2D4A34'}
+            />
+
+            <label style={S.lbl}>Severity</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              {['Mild', 'Moderate', 'Severe', 'Critical'].map(sv => (
+                <button key={sv} onClick={() => setSickForm(f => ({ ...f, severity: sv }))}
+                  style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid', borderColor: sickForm.severity === sv ? (sv === 'Critical' || sv === 'Severe' ? '#EF4444' : sv === 'Moderate' ? '#F59E0B' : '#22C55E') : '#2D4A34', background: sickForm.severity === sv ? 'rgba(239,68,68,0.1)' : '#162219', color: sickForm.severity === sv ? '#F0EDE8' : '#8C8677', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                >{sv}</button>
+              ))}
+            </div>
+
+            <label style={S.lbl}>Additional Notes</label>
+            <textarea
+              value={sickForm.notes}
+              onChange={e => setSickForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Any other observations…"
+              rows={2}
+              style={{ ...S.inp, resize: 'vertical', marginBottom: '20px' }}
+              onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}
+            />
+
+            {sickError && <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>{sickError}</p>}
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setSickAnimal(null)}
+                style={{ flex: 1, background: 'transparent', border: '1px solid #2D4A34', color: '#8C8677', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+              <button onClick={handleReportSick} disabled={sickSaving}
+                style={{ flex: 2, background: '#EF4444', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: sickSaving ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: sickSaving ? 0.7 : 1 }}>
+                {sickSaving ? 'Submitting…' : '🚨 Submit Health Alert'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

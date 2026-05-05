@@ -61,6 +61,19 @@ namespace VaxWise.API.Controllers
             return Ok(result);
         }
 
+        [HttpPatch("{id}/weight")]
+        [Authorize(Roles = "FarmOwner,FarmManager,FarmWorker")]
+        public async Task<IActionResult> UpdateWeight(int id, [FromBody] UpdateWeightDto dto)
+        {
+            var farmId = await GetFarmId();
+            var animal = await _context.Animals.FindAsync(id);
+            if (animal == null || animal.FarmId != farmId)
+                return NotFound(new { message = "Animal not found" });
+            animal.CurrentWeightKg = dto.WeightKg;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Weight updated", weightKg = animal.CurrentWeightKg });
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)

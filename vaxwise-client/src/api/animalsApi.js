@@ -19,6 +19,11 @@ export const deleteAnimal = async (id) => {
   await api.delete(`/animals/${id}`);
 };
 
+export const updateAnimalWeight = async ({ id, weightKg }) => {
+  const r = await api.patch(`/animals/${id}/weight`, { weightKg });
+  return r.data;
+};
+
 export const exportAnimalsCsv = async () => {
   const r = await api.get('/animals/export', { responseType: 'blob' });
   const url = URL.createObjectURL(r.data);

@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace VaxWise.API.DTOs
 {
+    public class UpdateWeightDto
+    {
+        [Required, Range(0, 10000)]
+        public double WeightKg { get; set; }
+    }
+
     public class UpdateAnimalDto
     {
         [StringLength(50)]
