@@ -20,7 +20,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const AnimalProfilePage = lazy(() => import('./pages/AnimalProfilePage'));
 
 const PageLoader = () => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#111812', color: '#8C8677', fontFamily: "'DM Sans', sans-serif", fontSize: '14px' }}>
+  <div className="flex items-center justify-center h-screen bg-slate-900 text-slate-500 text-sm">
     Loading…
   </div>
 );
