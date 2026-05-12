@@ -1,17 +1,10 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
 import { resetPassword } from '../api/authApi';
 
-const inp = {
-  width: '100%', padding: '11px 14px', borderRadius: '8px',
-  border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box',
-  background: '#162219', color: '#F0EDE8', outline: 'none',
-  fontFamily: "'DM Sans', sans-serif", transition: 'border-color 0.15s',
-};
-const lbl = {
-  display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600',
-  color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px',
-};
+const inp = 'w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors';
+const lbl = 'block mb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider';
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -39,53 +32,51 @@ export default function ResetPasswordPage() {
   };
 
   if (!token) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111812', color: '#EF4444', fontFamily: "'DM Sans', sans-serif" }}>
-      Invalid reset link. <Link to="/forgot-password" style={{ color: '#22C55E', marginLeft: '8px' }}>Request a new one.</Link>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-red-400 text-sm">
+      Invalid reset link.{' '}
+      <Link to="/forgot-password" className="text-teal-400 ml-2 hover:text-teal-300 transition-colors">Request a new one.</Link>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111812', fontFamily: "'DM Sans', sans-serif", padding: '40px' }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', justifyContent: 'center' }}>
-          <div style={{ width: '36px', height: '36px', background: '#22C55E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>🛡️</div>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-center gap-2.5 mb-7">
+          <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center">
+            <ShieldCheck size={18} className="text-slate-900" />
+          </div>
+          <span className="text-lg font-bold text-slate-50">VaxWise</span>
         </div>
-
-        <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '36px', border: '1px solid #1F3326' }}>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', color: '#F0EDE8', marginBottom: '4px' }}>New password</h2>
-          <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '28px' }}>Choose a strong password for your account</p>
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-slate-50 mb-1">New password</h2>
+          <p className="text-sm text-slate-400 mb-7">Choose a strong password for your account</p>
 
           {success ? (
-            <div style={{ background: '#0A2518', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', padding: '16px', color: '#22C55E', fontSize: '14px' }}>
+            <div className="bg-teal-500/10 border border-teal-500/25 rounded-lg px-4 py-4 text-teal-400 text-sm">
               ✓ Password reset successfully. Redirecting to sign in…
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={lbl}>New Password</label>
+              <div className="mb-4">
+                <label className={lbl}>New Password</label>
                 <input
                   type="password" value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
-                  required minLength={6} style={inp} placeholder="Min. 6 characters"
-                  onFocus={e => e.target.style.borderColor = '#22C55E'}
-                  onBlur={e => e.target.style.borderColor = '#2D4A34'}
+                  required minLength={6} className={inp} placeholder="Min. 6 characters"
                 />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={lbl}>Confirm Password</label>
+              <div className="mb-5">
+                <label className={lbl}>Confirm Password</label>
                 <input
                   type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-                  required style={inp} placeholder="Repeat password"
-                  onFocus={e => e.target.style.borderColor = '#22C55E'}
-                  onBlur={e => e.target.style.borderColor = '#2D4A34'}
+                  required className={inp} placeholder="Repeat password"
                 />
               </div>
               {error && (
-                <div style={{ background: '#1A0A0A', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#EF4444', fontSize: '13px', marginBottom: '16px' }}>{error}</div>
+                <div className="bg-red-500/10 border border-red-500/25 rounded-lg px-3.5 py-2.5 text-red-400 text-sm mb-4">{error}</div>
               )}
               <button
                 type="submit" disabled={loading}
-                style={{ width: '100%', padding: '13px', background: '#22C55E', color: '#0B1F14', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}
+                className="w-full py-2.5 bg-teal-500 hover:bg-teal-600 disabled:opacity-60 disabled:cursor-not-allowed text-slate-900 font-semibold rounded-lg text-sm transition-colors"
               >
                 {loading ? 'Saving…' : 'Set New Password'}
               </button>
