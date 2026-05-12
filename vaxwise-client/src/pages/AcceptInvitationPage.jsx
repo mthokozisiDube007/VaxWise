@@ -1,18 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInvitation, acceptInvitation } from '../api/invitationsApi';
 
-const inp = {
-  width: '100%', padding: '11px 14px', borderRadius: '8px',
-  border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box',
-  background: '#162219', color: '#F0EDE8', outline: 'none',
-  fontFamily: "'DM Sans', sans-serif", transition: 'border-color 0.15s',
-};
-const lbl = {
-  display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600',
-  color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px',
-};
+const inp = 'w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors';
+const lbl = 'block mb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider';
 
 export default function AcceptInvitationPage() {
   const [params] = useSearchParams();
@@ -53,74 +46,72 @@ export default function AcceptInvitationPage() {
   };
 
   if (loadingInvite) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111812', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400 text-sm">
       Verifying invitation…
     </div>
   );
 
   if (inviteError) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111812', fontFamily: "'DM Sans', sans-serif", padding: '40px' }}>
-      <div style={{ background: '#1A0A0A', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '40px', maxWidth: '400px', textAlign: 'center' }}>
-        <p style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</p>
-        <p style={{ color: '#EF4444', fontWeight: '700', fontSize: '16px', marginBottom: '8px' }}>Invitation Invalid</p>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>{inviteError}</p>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+      <div className="bg-red-500/10 border border-red-500/25 rounded-2xl p-10 max-w-sm w-full text-center">
+        <p className="text-3xl mb-3">⚠️</p>
+        <p className="text-red-400 font-bold text-base mb-2">Invitation Invalid</p>
+        <p className="text-slate-400 text-sm">{inviteError}</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111812', fontFamily: "'DM Sans', sans-serif", padding: '40px' }}>
-      <div style={{ width: '100%', maxWidth: '440px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px', justifyContent: 'center' }}>
-          <div style={{ width: '36px', height: '36px', background: '#22C55E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>🛡️</div>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-center gap-2.5 mb-7">
+          <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center">
+            <ShieldCheck size={18} className="text-slate-900" />
+          </div>
+          <span className="text-lg font-bold text-slate-50">VaxWise</span>
         </div>
 
         {/* Invitation summary */}
-        <div style={{ background: '#0A2518', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
-          <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '10px' }}>You've been invited to</p>
-          <p style={{ fontSize: '18px', fontFamily: "'Playfair Display', serif", color: '#F0EDE8', fontWeight: '700', marginBottom: '4px' }}>{invite.farmName}</p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ background: '#162219', color: '#22C55E', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', border: '1px solid #2D4A34' }}>{invite.role}</span>
-            {invite.customTitle && <span style={{ background: '#162219', color: '#8C8677', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', border: '1px solid #2D4A34' }}>{invite.customTitle}</span>}
+        <div className="bg-teal-500/10 border border-teal-500/25 rounded-xl px-5 py-4 mb-5">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">You've been invited to</p>
+          <p className="text-lg font-bold text-slate-50 mb-1.5">{invite.farmName}</p>
+          <div className="flex gap-2 flex-wrap">
+            <span className="bg-slate-800 text-teal-400 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-slate-700">{invite.role}</span>
+            {invite.customTitle && <span className="bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full text-[11px] border border-slate-700">{invite.customTitle}</span>}
           </div>
-          <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '8px' }}>Invited by {invite.invitedByName}</p>
+          <p className="text-xs text-slate-500 mt-2">Invited by {invite.invitedByName}</p>
         </div>
 
-        <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '32px', border: '1px solid #1F3326' }}>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', color: '#F0EDE8', marginBottom: '4px' }}>Create your account</h2>
-          <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '24px' }}>Signing up as <strong style={{ color: '#F0EDE8' }}>{invite.email}</strong></p>
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8">
+          <h2 className="text-xl font-bold text-slate-50 mb-1">Create your account</h2>
+          <p className="text-sm text-slate-400 mb-6">Signing up as <strong className="text-slate-50">{invite.email}</strong></p>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
+            <div className="grid gap-3.5 mb-5">
               <div>
-                <label style={lbl}>Full Name</label>
-                <input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required style={inp} placeholder="Your full name"
-                  onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                <label className={lbl}>Full Name</label>
+                <input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required className={inp} placeholder="Your full name" />
               </div>
               {invite.role === 'Vet' && (
                 <div>
-                  <label style={lbl}>SAVC Number</label>
-                  <input value={form.savcNumber} onChange={e => setForm(f => ({ ...f, savcNumber: e.target.value }))} style={inp} placeholder="e.g. SAVC-12345"
-                    onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                  <label className={lbl}>SAVC Number</label>
+                  <input value={form.savcNumber} onChange={e => setForm(f => ({ ...f, savcNumber: e.target.value }))} className={inp} placeholder="e.g. SAVC-12345" />
                 </div>
               )}
               <div>
-                <label style={lbl}>Password</label>
-                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required minLength={6} style={inp} placeholder="Min. 6 characters"
-                  onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                <label className={lbl}>Password</label>
+                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required minLength={6} className={inp} placeholder="Min. 6 characters" />
               </div>
               <div>
-                <label style={lbl}>Confirm Password</label>
-                <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))} required style={inp} placeholder="Repeat password"
-                  onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                <label className={lbl}>Confirm Password</label>
+                <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))} required className={inp} placeholder="Repeat password" />
               </div>
             </div>
             {error && (
-              <div style={{ background: '#1A0A0A', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#EF4444', fontSize: '13px', marginBottom: '16px' }}>{error}</div>
+              <div className="bg-red-500/10 border border-red-500/25 rounded-lg px-3.5 py-2.5 text-red-400 text-sm mb-4">{error}</div>
             )}
             <button type="submit" disabled={loading}
-              style={{ width: '100%', padding: '13px', background: '#22C55E', color: '#0B1F14', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}
+              className="w-full py-2.5 bg-teal-500 hover:bg-teal-600 disabled:opacity-60 disabled:cursor-not-allowed text-slate-900 font-semibold rounded-lg text-sm transition-colors"
             >
               {loading ? 'Creating account…' : 'Accept Invitation & Join'}
             </button>
