@@ -2,20 +2,16 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { generateCertificate, getFarmCertificates, verifyCertificate } from '../api/certificatesApi';
 
-const S = {
-  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
-  inp: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box', background: '#162219', color: '#F0EDE8', fontFamily: "'DM Sans', sans-serif", outline: 'none', transition: 'border-color 0.15s' },
-  lbl: { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' },
-  tab: (a) => ({ padding: '8px 20px', border: 'none', borderRadius: '8px', background: a ? '#22C55E' : 'transparent', cursor: 'pointer', fontWeight: a ? '700' : '400', color: a ? '#0B1F14' : '#8C8677', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }),
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
-  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
-  btn: (c) => ({ background: c, color: c === '#22C55E' ? '#0B1F14' : 'white', border: 'none', padding: '10px 22px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }),
-};
+const inp = 'w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors';
+const lbl = 'block mb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider';
+const th = 'px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide bg-slate-900/50';
+const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
+const card = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5';
 
 const STATUS = {
-  Valid: { bg: '#052E16', color: '#22C55E' },
-  Expired: { bg: '#1A2B1F', color: '#4A4A42' },
-  Tampered: { bg: '#450A0A', color: '#EF4444' },
+  Valid:    { cls: 'bg-teal-500/10 text-teal-400 border-teal-500/25',   label: 'Valid' },
+  Expired:  { cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25', label: 'Expired' },
+  Tampered: { cls: 'bg-red-500/10 text-red-400 border-red-500/25',      label: 'Tampered' },
 };
 
 export default function CertificatesPage() {
@@ -41,56 +37,63 @@ export default function CertificatesPage() {
   const tabs = [{ key: 'list', label: 'My Certificates' }, { key: 'generate', label: '+ Generate' }, { key: 'verify', label: 'Verify' }];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Certificates</h1>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>DALRRD-compliant vaccination certificates with SHA-256 tamper detection</p>
+    <div className="text-slate-50">
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl font-bold text-slate-50 mb-1">Certificates</h1>
+        <p className="text-slate-400 text-sm">DALRRD-compliant vaccination certificates with SHA-256 tamper detection</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', marginBottom: '24px' }}>
-        {tabs.map(t => <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>)}
+      <div className="flex gap-1 bg-slate-800 p-1 rounded-xl w-fit mb-6">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-5 py-2 rounded-lg text-sm transition-colors ${tab === t.key ? 'bg-teal-500 font-bold text-slate-900' : 'font-normal text-slate-400 hover:text-slate-200'}`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {tab === 'list' && (
-        <div style={S.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className={card}>
+          <div className="flex justify-between items-center mb-5">
             <div>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Issued Certificates</h3>
-              <p style={{ fontSize: '12px', color: '#8C8677' }}>All certificates issued for this farm</p>
+              <h3 className="font-serif text-xl text-slate-50 mb-0.5">Issued Certificates</h3>
+              <p className="text-xs text-slate-400">All certificates issued for this farm</p>
             </div>
-            <span style={{ background: '#1A2B1F', color: '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #2D4A34' }}>
+            <span className="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
               {certs.length} total
             </span>
           </div>
           {certs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
-              <p style={{ fontSize: '28px', marginBottom: '8px', color: '#8C8677' }}>◎</p>
-              <p style={{ fontSize: '14px' }}>No certificates issued yet</p>
+            <div className="text-center py-10 text-slate-600">
+              <p className="text-3xl mb-2 text-slate-400">◎</p>
+              <p className="text-sm">No certificates issued yet</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr>{['Cert ID','Animal','Vaccine','Issued','Expires','Status','Verify'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
+                  <tr>{['Cert ID','Animal','Vaccine','Issued','Expires','Status','Verify'].map(h => <th key={h} className={th}>{h}</th>)}</tr>
                 </thead>
-                <tbody>{certs.map((c, i) => {
-                  const st = STATUS[c.status] || { bg: '#1A2B1F', color: '#8C8677' };
-                  return (
-                    <tr key={c.certId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', fontWeight: '700', color: '#8C8677' }}>#{c.certId}</td>
-                      <td style={{ ...S.td, fontWeight: '700', color: '#22C55E' }}>{c.animalEarTag}</td>
-                      <td style={S.td}>{c.vaccineName}</td>
-                      <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.issuedAt).toLocaleDateString('en-ZA')}</td>
-                      <td style={{ ...S.td, color: '#8C8677', fontSize: '13px' }}>{new Date(c.expiresAt).toLocaleDateString('en-ZA')}</td>
-                      <td style={S.td}>
-                        <span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{c.status}</span>
-                      </td>
-                      <td style={S.td}>
-                        <a href={c.qrCodeUrl} target="_blank" rel="noreferrer" style={{ color: '#22C55E', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>View ↗</a>
-                      </td>
-                    </tr>
-                  );
-                })}</tbody>
+                <tbody>{certs.map((c, i) => (
+                  <tr key={c.certId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                    <td className={`${td} font-mono text-[13px] font-bold text-slate-400`}>#{c.certId}</td>
+                    <td className={`${td} font-bold text-teal-400`}>{c.animalEarTag}</td>
+                    <td className={td}>{c.vaccineName}</td>
+                    <td className={`${td} text-slate-400 text-[13px]`}>{new Date(c.issuedAt).toLocaleDateString('en-ZA')}</td>
+                    <td className={`${td} text-slate-400 text-[13px]`}>{new Date(c.expiresAt).toLocaleDateString('en-ZA')}</td>
+                    <td className={td}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${STATUS[c.status]?.cls ?? STATUS.Valid.cls}`}>
+                        ● {STATUS[c.status]?.label ?? c.status}
+                      </span>
+                    </td>
+                    <td className={td}>
+                      <a href={c.qrCodeUrl} target="_blank" rel="noreferrer" className="text-teal-400 text-[13px] font-semibold no-underline hover:text-teal-300 transition-colors">View ↗</a>
+                    </td>
+                  </tr>
+                ))}</tbody>
               </table>
             </div>
           )}
@@ -98,45 +101,43 @@ export default function CertificatesPage() {
       )}
 
       {tab === 'generate' && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '4px' }}>Generate Certificate</h3>
-          <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '24px' }}>Enter the vaccination event ID. The certificate will embed the SHA-256 audit hash and a QR verification code.</p>
-          <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', marginBottom: '20px' }}>
+        <div className={card}>
+          <h3 className="font-serif text-xl text-slate-50 mb-1">Generate Certificate</h3>
+          <p className="text-slate-400 text-[13px] mb-6">Enter the vaccination event ID. The certificate will embed the SHA-256 audit hash and a QR verification code.</p>
+          <div className="flex gap-3 max-w-[480px] mb-5">
             <input
               type="number"
               value={generateEventId}
               onChange={e => setGenerateEventId(e.target.value)}
               placeholder="Vaccination Event ID"
-              style={{ ...S.inp, flex: 1 }}
-              onFocus={e => e.target.style.borderColor = '#22C55E'}
-              onBlur={e => e.target.style.borderColor = '#2D4A34'}
+              className={`${inp} flex-1`}
             />
             <button
               onClick={() => generateMut.mutate(parseInt(generateEventId))}
               disabled={!generateEventId || generateMut.isPending}
-              style={{ ...S.btn('#22C55E'), opacity: !generateEventId || generateMut.isPending ? 0.6 : 1 }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-xs transition-colors ${(!generateEventId || generateMut.isPending) ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               {generateMut.isPending ? 'Generating…' : 'Generate'}
             </button>
           </div>
-          {generateMut.isError && <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>Failed. Check the event ID.</p>}
+          {generateMut.isError && <p className="text-red-400 text-[13px] mb-3">Failed. Check the event ID.</p>}
           {generatedCert && (
-            <div style={{ padding: '24px', background: '#0A2518', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', maxWidth: '540px' }}>
-              <p style={{ margin: '0 0 4px', fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#22C55E' }}>
+            <div className="p-6 bg-slate-900 border border-teal-500/30 rounded-xl max-w-[540px]">
+              <p className="mb-1 font-serif text-xl font-bold text-teal-400">
                 Certificate #{generatedCert.certId}
               </p>
-              <p style={{ margin: '0 0 16px', color: '#8C8677', fontSize: '13px' }}>
+              <p className="mb-4 text-slate-400 text-[13px]">
                 {generatedCert.animalEarTag} · {generatedCert.vaccineName} · Issued {new Date(generatedCert.issuedAt).toLocaleDateString('en-ZA')} · Expires {new Date(generatedCert.expiresAt).toLocaleDateString('en-ZA')}
               </p>
-              <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' }}>SHA-256 Audit Hash</p>
-              <code style={{ display: 'block', fontSize: '11px', wordBreak: 'break-all', color: '#86EFAC', fontFamily: "'JetBrains Mono', monospace", background: '#162219', padding: '10px 14px', borderRadius: '7px', border: '1px solid #2D4A34', marginBottom: '16px' }}>
+              <p className={`${lbl} mb-1.5`}>SHA-256 Audit Hash</p>
+              <code className="block text-[11px] break-all text-green-300 font-mono bg-slate-800 px-3.5 py-2.5 rounded-lg border border-slate-700 mb-4">
                 {generatedCert.auditHash}
               </code>
               {generatedCert.pdfBase64 && (
                 <a
                   href={`data:application/pdf;base64,${generatedCert.pdfBase64}`}
                   download={`cert-${generatedCert.certId}.pdf`}
-                  style={{ ...S.btn('#22C55E'), display: 'inline-block', textDecoration: 'none', fontSize: '13px' }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-xs transition-colors no-underline"
                 >
                   Download PDF
                 </a>
@@ -147,23 +148,21 @@ export default function CertificatesPage() {
       )}
 
       {tab === 'verify' && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '4px' }}>Verify Certificate</h3>
-          <p style={{ color: '#8C8677', fontSize: '13px', marginBottom: '24px' }}>Inspectors and buyers can verify any certificate by ID — no login required.</p>
-          <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', marginBottom: '20px' }}>
+        <div className={card}>
+          <h3 className="font-serif text-xl text-slate-50 mb-1">Verify Certificate</h3>
+          <p className="text-slate-400 text-[13px] mb-6">Inspectors and buyers can verify any certificate by ID — no login required.</p>
+          <div className="flex gap-3 max-w-[480px] mb-5">
             <input
               type="number"
               value={verifyId}
               onChange={e => setVerifyId(e.target.value)}
               placeholder="Certificate ID"
-              style={{ ...S.inp, flex: 1 }}
-              onFocus={e => e.target.style.borderColor = '#22C55E'}
-              onBlur={e => e.target.style.borderColor = '#2D4A34'}
+              className={`${inp} flex-1`}
             />
             <button
               onClick={handleVerify}
               disabled={!verifyId}
-              style={{ ...S.btn('#22C55E'), opacity: !verifyId ? 0.6 : 1 }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-xs transition-colors ${!verifyId ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               Verify
             </button>
@@ -171,14 +170,14 @@ export default function CertificatesPage() {
           {verifyResult && (() => {
             const isValid = verifyResult.verificationStatus === 'Valid';
             const isTampered = verifyResult.verificationStatus === 'Tampered';
-            const borderColor = isValid ? 'rgba(34,197,94,0.3)' : isTampered ? 'rgba(239,68,68,0.3)' : '#2D4A34';
-            const statusColor = isValid ? '#22C55E' : isTampered ? '#EF4444' : '#8C8677';
+            const borderCls = isValid ? 'border-teal-500/30' : isTampered ? 'border-red-500/30' : 'border-slate-700';
+            const statusCls = isValid ? 'text-teal-400' : isTampered ? 'text-red-400' : 'text-slate-400';
             return (
-              <div style={{ padding: '24px', borderRadius: '12px', background: '#162219', border: `1px solid ${borderColor}`, maxWidth: '540px' }}>
-                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: statusColor, marginBottom: '16px' }}>
+              <div className={`p-6 rounded-xl bg-slate-800 border ${borderCls} max-w-[540px]`}>
+                <p className={`font-serif text-lg font-bold ${statusCls} mb-4`}>
                   {isValid ? '✓ Valid Certificate' : isTampered ? '✗ Tampered / Invalid' : '⚠ Expired'}
                 </p>
-                <div style={{ display: 'grid', gap: '12px', fontSize: '14px', marginBottom: '16px' }}>
+                <div className="grid gap-3 text-sm mb-4">
                   {[
                     ['Animal', verifyResult.animalEarTag],
                     ['Vaccine', `${verifyResult.vaccineName} · Batch ${verifyResult.vaccineBatch}`],
@@ -186,14 +185,14 @@ export default function CertificatesPage() {
                     ['Event', new Date(verifyResult.eventTimestamp).toLocaleString('en-ZA')],
                     ['Expires', new Date(verifyResult.expiresAt).toLocaleDateString('en-ZA')],
                   ].map(([label, value]) => (
-                    <div key={label} style={{ display: 'flex', gap: '16px' }}>
-                      <span style={{ minWidth: '80px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', paddingTop: '2px' }}>{label}</span>
-                      <span style={{ fontWeight: '600', color: '#F0EDE8' }}>{value}</span>
+                    <div key={label} className="flex gap-4">
+                      <span className="min-w-[80px] text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-0.5">{label}</span>
+                      <span className="font-semibold text-slate-50">{value}</span>
                     </div>
                   ))}
                 </div>
-                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Audit Hash</p>
-                <code style={{ fontSize: '11px', wordBreak: 'break-all', color: '#4A4A42', fontFamily: "'JetBrains Mono', monospace" }}>{verifyResult.auditHash}</code>
+                <p className={`${lbl} mb-1.5`}>Audit Hash</p>
+                <code className="text-[11px] break-all text-slate-600 font-mono">{verifyResult.auditHash}</code>
               </div>
             );
           })()}
