@@ -6,15 +6,11 @@ import { recordTreatment, getHealthRecords, getCurrentHealth, checkOutbreak } fr
 import { getAllAnimals } from '../api/animalsApi';
 import { downloadDalrrdReport } from '../api/reportsApi';
 
-const S = {
-  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
-  inp: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box', background: '#162219', color: '#F0EDE8', fontFamily: "'DM Sans', sans-serif", outline: 'none' },
-  lbl: { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' },
-  tab: (a) => ({ padding: '8px 20px', border: 'none', borderRadius: '8px', background: a ? '#22C55E' : 'transparent', cursor: 'pointer', fontWeight: a ? '700' : '400', color: a ? '#0B1F14' : '#8C8677', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s' }),
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
-  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
-  btn: (c) => ({ background: c, color: c === '#22C55E' ? '#0B1F14' : 'white', border: 'none', padding: '10px 22px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }),
-};
+const inp = 'w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors';
+const lbl = 'block mb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider';
+const th = 'px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide bg-slate-900/50';
+const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
+const card = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5';
 
 const EMPTY_FORM = {
   animalId: '', recordType: 'Treatment', symptoms: '', diagnosis: '',
@@ -75,61 +71,77 @@ export default function HealthPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Health Management</h1>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>Treatment records, health history, and outbreak detection</p>
+    <div className="text-slate-50">
+      <div className="mb-7">
+        <h1 className="text-3xl font-bold text-slate-50 mb-1">Health Management</h1>
+        <p className="text-slate-400 text-sm">Treatment records, health history, and outbreak detection</p>
       </div>
 
-      <div style={{ overflowX: 'auto', marginBottom: '24px', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ display: 'flex', gap: '4px', background: '#162219', padding: '4px', borderRadius: '10px', width: 'fit-content', minWidth: 'max-content', border: '1px solid #1F3326' }}>
-        {tabs.map(t => <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>)}
-      </div>
+      <div className="overflow-x-auto mb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex gap-1 bg-slate-800 p-1 rounded-xl w-fit min-w-max border border-slate-700">
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={tab === t.key
+                ? 'px-5 py-2 rounded-lg bg-teal-500 text-slate-900 font-bold text-sm transition-all'
+                : 'px-5 py-2 rounded-lg bg-transparent text-slate-400 font-normal text-sm transition-all hover:text-slate-200'}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Under Treatment */}
       {tab === 'current' && (
-        <div style={S.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8' }}>Animals Under Treatment</h3>
-            <span style={{ background: current.length > 0 ? '#450A0A' : '#052E16', color: current.length > 0 ? '#EF4444' : '#22C55E', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px' }}>
+        <div className={card}>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-xl font-semibold text-slate-50">Animals Under Treatment</h3>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full ${current.length > 0 ? 'bg-red-950 text-red-400' : 'bg-teal-950 text-teal-400'}`}>
               {current.length} active
             </span>
           </div>
           {current.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
-              <p style={{ fontSize: '24px', marginBottom: '8px', color: '#22C55E' }}>♥</p>
-              <p style={{ fontSize: '14px' }}>No animals under treatment</p>
+            <div className="text-center py-10">
+              <p className="text-2xl mb-2 text-teal-400">♥</p>
+              <p className="text-sm text-slate-600">No animals under treatment</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>
-                  {['Animal', 'Symptoms', 'Diagnosis', 'Medication', 'Vet', 'Date', 'Withdrawal'].map(h => (
-                    <th key={h} style={{ ...S.th, background: '#1A0A0A', color: '#EF4444' }}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>{current.map((r, i) => (
-                  <tr key={r.healthRecordId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                    <td style={{ ...S.td, fontWeight: '700', color: '#22C55E' }}>{r.animalEarTag}</td>
-                    <td style={S.td}>{r.symptoms}</td>
-                    <td style={S.td}>{r.diagnosis}</td>
-                    <td style={S.td}>{r.medicationUsed} {r.dosage && <span style={{ color: '#8C8677', fontSize: '12px' }}>({r.dosage})</span>}</td>
-                    <td style={S.td}>{r.vetName}</td>
-                    <td style={S.td}>{new Date(r.treatmentDate).toLocaleDateString('en-ZA')}</td>
-                    <td style={S.td}>
-                      {r.isWithdrawalActive ? (
-                        <span style={{ background: '#2A1500', color: '#F59E0B', padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                          {r.daysUntilClear}d — clears {new Date(r.withdrawalClearDate).toLocaleDateString('en-ZA')}
-                        </span>
-                      ) : r.withdrawalDays > 0 ? (
-                        <span style={{ background: '#052E16', color: '#22C55E', padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>Cleared</span>
-                      ) : (
-                        <span style={{ color: '#4A4A42', fontSize: '12px' }}>—</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    {['Animal', 'Symptoms', 'Diagnosis', 'Medication', 'Vet', 'Date', 'Withdrawal'].map(h => (
+                      <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-red-400 uppercase tracking-wide bg-red-950/30">{h}</th>
+                    ))}
                   </tr>
-                ))}</tbody>
+                </thead>
+                <tbody>
+                  {current.map((r, i) => (
+                    <tr key={r.healthRecordId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                      <td className={`${td} font-bold text-teal-400`}>{r.animalEarTag}</td>
+                      <td className={td}>{r.symptoms}</td>
+                      <td className={td}>{r.diagnosis}</td>
+                      <td className={td}>
+                        {r.medicationUsed}{r.dosage && <span className="text-slate-400 text-xs"> ({r.dosage})</span>}
+                      </td>
+                      <td className={td}>{r.vetName}</td>
+                      <td className={td}>{new Date(r.treatmentDate).toLocaleDateString('en-ZA')}</td>
+                      <td className={td}>
+                        {r.isWithdrawalActive ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-amber-500/10 text-amber-400 border-amber-500/25 whitespace-nowrap">
+                            {r.daysUntilClear}d — clears {new Date(r.withdrawalClearDate).toLocaleDateString('en-ZA')}
+                          </span>
+                        ) : r.withdrawalDays > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-teal-500/10 text-teal-400 border-teal-500/25">Cleared</span>
+                        ) : (
+                          <span className="text-slate-600 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           )}
@@ -138,42 +150,49 @@ export default function HealthPage() {
 
       {/* Record Treatment */}
       {tab === 'record' && hasRole('Vet') && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Record Treatment</h3>
+        <div className={card}>
+          <h3 className="text-xl font-semibold text-slate-50 mb-5">Record Treatment</h3>
           <form onSubmit={e => { e.preventDefault(); recordMut.mutate({ ...form, animalId: parseInt(form.animalId), withdrawalDays: parseInt(form.withdrawalDays) || 0 }); }}>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-6`}>
               <div>
-                <label style={S.lbl}>Animal</label>
-                <select value={form.animalId} onChange={e => set('animalId', e.target.value)} required style={{ ...S.inp }}>
-                  <option value="" style={{ background: '#162219' }}>— Select animal —</option>
-                  {animals.map(a => <option key={a.animalId} value={a.animalId} style={{ background: '#162219' }}>{a.earTagNumber} ({a.breed})</option>)}
+                <label className={lbl}>Animal</label>
+                <select value={form.animalId} onChange={e => set('animalId', e.target.value)} required className={inp}>
+                  <option value="" className="bg-slate-800">— Select animal —</option>
+                  {animals.map(a => <option key={a.animalId} value={a.animalId} className="bg-slate-800">{a.earTagNumber} ({a.breed})</option>)}
                 </select>
               </div>
               <div>
-                <label style={S.lbl}>Record Type</label>
-                <select value={form.recordType} onChange={e => set('recordType', e.target.value)} style={{ ...S.inp }}>
-                  <option style={{ background: '#162219' }}>Treatment</option>
-                  <option style={{ background: '#162219' }}>VetVisit</option>
-                  <option style={{ background: '#162219' }}>Observation</option>
+                <label className={lbl}>Record Type</label>
+                <select value={form.recordType} onChange={e => set('recordType', e.target.value)} className={inp}>
+                  <option className="bg-slate-800">Treatment</option>
+                  <option className="bg-slate-800">VetVisit</option>
+                  <option className="bg-slate-800">Observation</option>
                 </select>
               </div>
               <div>
-                <label style={S.lbl}>Treatment Date</label>
-                <input type="date" value={form.treatmentDate} onChange={e => set('treatmentDate', e.target.value)} required style={{ ...S.inp, colorScheme: 'dark' }} />
+                <label className={lbl}>Treatment Date</label>
+                <input type="date" value={form.treatmentDate} onChange={e => set('treatmentDate', e.target.value)} required className={`${inp} [color-scheme:dark]`} />
               </div>
               {[['Symptoms', 'symptoms'], ['Diagnosis', 'diagnosis'], ['Medication Used', 'medicationUsed'], ['Dosage', 'dosage'], ['Vet Name', 'vetName'], ['Outcome', 'outcome']].map(([label, key]) => (
-                <div key={key}><label style={S.lbl}>{label}</label><input value={form[key]} onChange={e => set(key, e.target.value)} style={S.inp} /></div>
+                <div key={key}>
+                  <label className={lbl}>{label}</label>
+                  <input value={form[key]} onChange={e => set(key, e.target.value)} className={inp} />
+                </div>
               ))}
               <div>
-                <label style={S.lbl}>
+                <label className={lbl}>
                   Withdrawal Period (days){' '}
-                  <span style={{ fontWeight: '400', color: '#4A4A42', textTransform: 'none', letterSpacing: 0 }}>— 0 if none</span>
+                  <span className="font-normal text-slate-600 normal-case tracking-normal">— 0 if none</span>
                 </label>
-                <input type="number" min="0" max="365" value={form.withdrawalDays} onChange={e => set('withdrawalDays', e.target.value)} style={S.inp} />
+                <input type="number" min="0" max="365" value={form.withdrawalDays} onChange={e => set('withdrawalDays', e.target.value)} className={inp} />
               </div>
             </div>
-            {recordMut.isError && <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>Failed to record. Check animal selection.</p>}
-            <button type="submit" disabled={recordMut.isPending} style={S.btn('#EF4444')}>
+            {recordMut.isError && <p className="text-red-400 text-sm mb-3">Failed to record. Check animal selection.</p>}
+            <button
+              type="submit"
+              disabled={recordMut.isPending}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-60"
+            >
               {recordMut.isPending ? 'Recording…' : 'Record Treatment'}
             </button>
           </form>
@@ -182,40 +201,54 @@ export default function HealthPage() {
 
       {/* Health History */}
       {tab === 'history' && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Health History</h3>
-          <div style={{ marginBottom: '20px', maxWidth: '320px' }}>
-            <label style={S.lbl}>Select Animal</label>
-            <select value={historyAnimalId} onChange={e => setHistoryAnimalId(e.target.value)} style={{ ...S.inp }}>
-              <option value="" style={{ background: '#162219' }}>— Select animal —</option>
-              {animals.map(a => <option key={a.animalId} value={a.animalId} style={{ background: '#162219' }}>{a.earTagNumber} ({a.breed})</option>)}
+        <div className={card}>
+          <h3 className="text-xl font-semibold text-slate-50 mb-5">Health History</h3>
+          <div className="mb-5 max-w-xs">
+            <label className={lbl}>Select Animal</label>
+            <select value={historyAnimalId} onChange={e => setHistoryAnimalId(e.target.value)} className={inp}>
+              <option value="" className="bg-slate-800">— Select animal —</option>
+              {animals.map(a => <option key={a.animalId} value={a.animalId} className="bg-slate-800">{a.earTagNumber} ({a.breed})</option>)}
             </select>
           </div>
-          {historyAnimalId && (history.length === 0 ? <p style={{ color: '#8C8677' }}>No health records found.</p> : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>
-                  {['Type', 'Symptoms', 'Diagnosis', 'Medication', 'Vet', 'Outcome', 'Date', 'Withdrawal Clear'].map(h => <th key={h} style={S.th}>{h}</th>)}
-                </tr></thead>
-                <tbody>{history.map((r, i) => (
-                  <tr key={r.healthRecordId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                    <td style={S.td}><span style={{ background: '#162219', color: '#8C8677', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '600', border: '1px solid #2D4A34' }}>{r.recordType}</span></td>
-                    <td style={S.td}>{r.symptoms}</td>
-                    <td style={S.td}>{r.diagnosis}</td>
-                    <td style={S.td}>{r.medicationUsed}</td>
-                    <td style={S.td}>{r.vetName}</td>
-                    <td style={S.td}>{r.outcome}</td>
-                    <td style={S.td}>{new Date(r.treatmentDate).toLocaleDateString('en-ZA')}</td>
-                    <td style={S.td}>
-                      {r.withdrawalDays > 0 ? (
-                        <span style={{ fontSize: '12px', color: r.isWithdrawalActive ? '#F59E0B' : '#22C55E' }}>
-                          {new Date(r.withdrawalClearDate).toLocaleDateString('en-ZA')}
-                          {r.isWithdrawalActive && <span style={{ color: '#F59E0B' }}> ({r.daysUntilClear}d)</span>}
-                        </span>
-                      ) : <span style={{ color: '#4A4A42', fontSize: '12px' }}>—</span>}
-                    </td>
+          {historyAnimalId && (history.length === 0 ? (
+            <p className="text-slate-400">No health records found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    {['Type', 'Symptoms', 'Diagnosis', 'Medication', 'Vet', 'Outcome', 'Date', 'Withdrawal Clear'].map(h => (
+                      <th key={h} className={th}>{h}</th>
+                    ))}
                   </tr>
-                ))}</tbody>
+                </thead>
+                <tbody>
+                  {history.map((r, i) => (
+                    <tr key={r.healthRecordId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                      <td className={td}>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-500/10 text-slate-400 border-slate-500/25">
+                          {r.recordType}
+                        </span>
+                      </td>
+                      <td className={td}>{r.symptoms}</td>
+                      <td className={td}>{r.diagnosis}</td>
+                      <td className={td}>{r.medicationUsed}</td>
+                      <td className={td}>{r.vetName}</td>
+                      <td className={td}>{r.outcome}</td>
+                      <td className={td}>{new Date(r.treatmentDate).toLocaleDateString('en-ZA')}</td>
+                      <td className={td}>
+                        {r.withdrawalDays > 0 ? (
+                          <span className={`text-xs ${r.isWithdrawalActive ? 'text-amber-400' : 'text-teal-400'}`}>
+                            {new Date(r.withdrawalClearDate).toLocaleDateString('en-ZA')}
+                            {r.isWithdrawalActive && <span className="text-amber-400"> ({r.daysUntilClear}d)</span>}
+                          </span>
+                        ) : (
+                          <span className="text-slate-600 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           ))}
@@ -224,40 +257,50 @@ export default function HealthPage() {
 
       {/* Outbreak Detection */}
       {tab === 'outbreak' && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '8px' }}>Outbreak Detection</h3>
-          <p style={{ color: '#8C8677', fontSize: '14px', marginBottom: '24px' }}>Alert fires when 3+ animals show the same symptom within 48 hours.</p>
-          <div style={{ display: 'flex', gap: '12px', maxWidth: isMobile ? '100%' : '480px', marginBottom: '20px' }}>
-            <input value={symptomCheck} onChange={e => setSymptomCheck(e.target.value)} placeholder="e.g. FMD, respiratory, diarrhoea" style={{ ...S.inp, flex: 1 }} />
-            <button onClick={handleOutbreakCheck} style={S.btn('#EF4444')}>Check</button>
+        <div className={card}>
+          <h3 className="text-xl font-semibold text-slate-50 mb-2">Outbreak Detection</h3>
+          <p className="text-slate-400 text-sm mb-6">Alert fires when 3+ animals show the same symptom within 48 hours.</p>
+          <div className={`flex gap-3 mb-5 ${isMobile ? 'w-full' : 'max-w-lg'}`}>
+            <input
+              value={symptomCheck}
+              onChange={e => setSymptomCheck(e.target.value)}
+              placeholder="e.g. FMD, respiratory, diarrhoea"
+              className={`${inp} flex-1`}
+            />
+            <button
+              onClick={handleOutbreakCheck}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors"
+            >
+              Check
+            </button>
           </div>
           {outbreakResult && (
-            <div style={{ borderRadius: '10px', border: `1px solid ${outbreakResult.outbreakDetected ? '#7F1D1D' : '#166534'}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', background: outbreakResult.outbreakDetected ? '#1A0A0A' : '#052E16' }}>
-                <p style={{ fontWeight: '700', color: outbreakResult.outbreakDetected ? '#EF4444' : '#22C55E', marginBottom: '6px', fontSize: '16px' }}>
+            <div className={`rounded-xl border overflow-hidden ${outbreakResult.outbreakDetected ? 'border-red-900' : 'border-teal-900'}`}>
+              <div className={`px-5 py-4 ${outbreakResult.outbreakDetected ? 'bg-red-950/50' : 'bg-teal-950/50'}`}>
+                <p className={`font-bold mb-1.5 text-base ${outbreakResult.outbreakDetected ? 'text-red-400' : 'text-teal-400'}`}>
                   {outbreakResult.outbreakDetected ? '🚨 OUTBREAK DETECTED' : '✓ No Outbreak Detected'}
                 </p>
-                <p style={{ fontSize: '14px', color: '#F0EDE8', opacity: 0.85 }}>{outbreakResult.alertMessage}</p>
+                <p className="text-sm text-slate-50 opacity-85">{outbreakResult.alertMessage}</p>
                 {outbreakResult.affectedEarTags?.length > 0 && (
-                  <p style={{ marginTop: '10px', fontSize: '13px', color: '#8C8677' }}>
-                    Affected: <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: '#F0EDE8' }}>{outbreakResult.affectedEarTags.join(', ')}</strong>
+                  <p className="mt-2.5 text-sm text-slate-400">
+                    Affected: <strong className="font-mono text-slate-50">{outbreakResult.affectedEarTags.join(', ')}</strong>
                   </p>
                 )}
               </div>
               {outbreakResult.isNotifiable && (
-                <div style={{ padding: '14px 20px', background: '#1A0A0A', borderTop: '1px solid #7F1D1D' }}>
-                  <p style={{ fontWeight: '700', fontSize: '14px', color: '#EF4444', marginBottom: '4px' }}>
+                <div className="px-5 py-3.5 bg-red-950/50 border-t border-red-900">
+                  <p className="font-bold text-sm text-red-400 mb-1">
                     DALRRD Notifiable: {outbreakResult.notifiableDiseaseName}
                   </p>
-                  <p style={{ fontSize: '13px', color: '#F0EDE8', opacity: 0.85, marginBottom: '12px' }}>
+                  <p className="text-sm text-slate-50 opacity-85 mb-3">
                     Reporting deadline:{' '}
                     <strong>{outbreakResult.dalrrdReportDeadline ? new Date(outbreakResult.dalrrdReportDeadline).toLocaleString('en-ZA') : 'N/A'}</strong>
                   </p>
-                  {reportError && <p style={{ fontSize: '12px', color: '#FCA5A5', marginBottom: '8px' }}>{reportError}</p>}
+                  {reportError && <p className="text-xs text-red-300 mb-2">{reportError}</p>}
                   <button
                     onClick={handleDownloadReport}
                     disabled={reportLoading}
-                    style={{ background: '#EF4444', color: 'white', border: 'none', padding: '8px 18px', borderRadius: '8px', cursor: reportLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: reportLoading ? 0.7 : 1 }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-60"
                   >
                     {reportLoading ? 'Generating PDF…' : '⬇ Download DALRRD Report'}
                   </button>
