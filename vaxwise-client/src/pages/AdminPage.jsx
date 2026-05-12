@@ -7,18 +7,18 @@ const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
 const card = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5';
 
 const msColor = (ms) => ms <= 100 ? 'text-teal-400' : ms <= 300 ? 'text-amber-400' : 'text-red-400';
-const msColorHex = (ms) => ms <= 100 ? '#22C55E' : ms <= 300 ? '#F59E0B' : '#EF4444';
+const msColorHex = (ms) => ms <= 100 ? '#14B8A6' : ms <= 300 ? '#F59E0B' : '#EF4444';
 const msLabel = (ms) => ms <= 100 ? 'Fast' : ms <= 300 ? 'Acceptable' : 'Slow';
-const scoreColor = (s) => s >= 75 ? '#22C55E' : s >= 50 ? '#F59E0B' : '#EF4444';
+const scoreColor = (s) => s >= 75 ? '#14B8A6' : s >= 50 ? '#F59E0B' : '#EF4444';
 const scoreColorClass = (s) => s >= 75 ? 'text-teal-400' : s >= 50 ? 'text-amber-400' : 'text-red-400';
 
-const topBorderStyle = (color) => ({ borderTop: `3px solid ${color || '#22C55E'}` });
+const topBorderStyle = (color) => ({ borderTop: `3px solid ${color || '#14B8A6'}` });
 
 function StatCard({ label, value, sub, color, topBorder }) {
   return (
     <div
       className="bg-slate-800 border border-slate-700 rounded-xl p-5"
-      style={topBorderStyle(topBorder || color || '#22C55E')}
+      style={topBorderStyle(topBorder || color || '#14B8A6')}
     >
       <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-3.5">{label}</p>
       <p className="text-5xl font-bold leading-none" style={{ color: color || undefined }} >{value}</p>
@@ -37,7 +37,7 @@ function HourlyChart({ hours }) {
         {hours.map(h => {
           const heightPct = Math.max((h.total / maxTotal) * 100, h.total > 0 ? 8 : 2);
           const isNow = h.hour === now;
-          const bg = h.failed > 0 ? '#EF4444' : isNow ? '#22C55E' : '#177A3E';
+          const bg = h.failed > 0 ? '#EF4444' : isNow ? '#14B8A6' : '#177A3E';
           return (
             <div
               key={h.hour}
@@ -77,14 +77,14 @@ function LoginMonitorTab() {
   if (error) return <div className="p-10 text-red-400">Failed to load admin data.</div>;
 
   const avgColorHex = msColorHex(stats.avgResponseTimeMs24h);
-  const successRateColorHex = stats.successRate24h >= 90 ? '#22C55E' : stats.successRate24h >= 70 ? '#F59E0B' : '#EF4444';
-  const failedColorHex = stats.failedLogins24h > 10 ? '#EF4444' : stats.failedLogins24h > 0 ? '#F59E0B' : '#22C55E';
+  const successRateColorHex = stats.successRate24h >= 90 ? '#14B8A6' : stats.successRate24h >= 70 ? '#F59E0B' : '#EF4444';
+  const failedColorHex = stats.failedLogins24h > 10 ? '#EF4444' : stats.failedLogins24h > 0 ? '#F59E0B' : '#14B8A6';
 
   return (
     <>
       <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-[0.8px] mb-3">Last 24 Hours</p>
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Logins" value={stats.totalLogins24h} sub="authentication attempts" color="#F0EDE8" topBorder="#22C55E" />
+        <StatCard label="Total Logins" value={stats.totalLogins24h} sub="authentication attempts" color="#F0EDE8" topBorder="#14B8A6" />
         <StatCard
           label="Success Rate"
           value={`${stats.successRate24h}%`}
@@ -114,8 +114,8 @@ function LoginMonitorTab() {
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Total', value: stats.totalLogins7d },
-              { label: 'Successful', value: stats.successfulLogins7d, color: '#22C55E' },
-              { label: 'Failed', value: stats.failedLogins7d, color: stats.failedLogins7d > 0 ? '#EF4444' : '#22C55E' },
+              { label: 'Successful', value: stats.successfulLogins7d, color: '#14B8A6' },
+              { label: 'Failed', value: stats.failedLogins7d, color: stats.failedLogins7d > 0 ? '#EF4444' : '#14B8A6' },
               { label: 'Unique Users', value: stats.uniqueUsers7d },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-slate-800 rounded-lg p-3.5 border border-slate-700">
@@ -130,7 +130,7 @@ function LoginMonitorTab() {
                 className="h-full rounded-full transition-[width] duration-[800ms] cubic-bezier-[0.4,0,0.2,1]"
                 style={{
                   width: `${stats.successRate7d}%`,
-                  background: stats.successRate7d >= 90 ? '#22C55E' : '#F59E0B',
+                  background: stats.successRate7d >= 90 ? '#14B8A6' : '#F59E0B',
                 }}
               />
             </div>
@@ -143,7 +143,7 @@ function LoginMonitorTab() {
           <p className="text-xs text-slate-400 mb-5">Last 24 hours · UTC · red = failures present</p>
           <HourlyChart hours={stats.hourlyBreakdown24h} />
           <div className="flex gap-4 mt-3.5">
-            {[['#22C55E', 'Successful hour'], ['#EF4444', 'Failures detected'], ['#177A3E', 'Past hours']].map(([color, label]) => (
+            {[['#14B8A6', 'Successful hour'], ['#EF4444', 'Failures detected'], ['#177A3E', 'Past hours']].map(([color, label]) => (
               <div key={label} className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} />
                 <span className="text-[11px] text-slate-400">{label}</span>
@@ -236,8 +236,8 @@ function FarmsTab() {
   return (
     <>
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <StatCard label="Total Farms" value={total} sub="registered on platform" color="#F0EDE8" topBorder="#22C55E" />
-        <StatCard label="Active" value={active} sub="currently operational" color="#22C55E" topBorder="#22C55E" />
+        <StatCard label="Total Farms" value={total} sub="registered on platform" color="#F0EDE8" topBorder="#14B8A6" />
+        <StatCard label="Active" value={active} sub="currently operational" color="#14B8A6" topBorder="#14B8A6" />
         <StatCard
           label="Inactive"
           value={inactive}
