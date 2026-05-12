@@ -1,18 +1,19 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ShieldCheck } from 'lucide-react';
 import { verifyCertificate } from '../api/certificatesApi';
 
-const STATUS_STYLE = {
-  Valid:    { bg: '#0A2518', color: '#22C55E', border: 'rgba(34,197,94,0.3)', icon: '✓' },
-  Expired:  { bg: '#1A2B1F', color: '#8C8677', border: '#2D4A34', icon: '○' },
-  Tampered: { bg: '#1A0A0A', color: '#EF4444', border: 'rgba(239,68,68,0.3)', icon: '✕' },
+const CERT_STATUS = {
+  Valid:    { cls: 'bg-teal-500/10 text-teal-400 border-teal-500/25',   label: 'Valid', icon: '✓' },
+  Expired:  { cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25', label: 'Expired', icon: '⚠' },
+  Tampered: { cls: 'bg-red-500/10 text-red-400 border-red-500/25',      label: 'Tampered', icon: '✗' },
 };
 
 function Row({ label, value, mono }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0', borderBottom: '1px solid #1F3326', gap: '16px' }}>
-      <span style={{ fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px', flexShrink: 0, paddingTop: '2px' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#F0EDE8', textAlign: 'right', fontFamily: mono ? "'JetBrains Mono', monospace" : "'DM Sans', sans-serif", wordBreak: 'break-all' }}>{value}</span>
+    <div className="flex justify-between items-start py-3 border-b border-slate-700 gap-4">
+      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider shrink-0 pt-0.5">{label}</span>
+      <span className={`text-sm text-slate-50 text-right break-all${mono ? ' font-mono' : ''}`}>{value}</span>
     </div>
   );
 }
@@ -27,42 +28,44 @@ export default function PublicVerifyPage() {
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: '#111812', fontFamily: "'DM Sans', sans-serif", padding: '40px 20px' }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-slate-900 px-5 py-10">
+      <div className="max-w-lg mx-auto">
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '36px', justifyContent: 'center' }}>
-          <div style={{ width: '36px', height: '36px', background: '#22C55E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>🛡️</div>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: '#F0EDE8' }}>VaxWise</span>
-          <span style={{ fontSize: '11px', color: '#8C8677', background: '#1A2B1F', padding: '3px 10px', borderRadius: '20px', border: '1px solid #2D4A34', marginLeft: '4px' }}>Certificate Verification</span>
+        <div className="flex items-center justify-center gap-2.5 mb-9">
+          <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center">
+            <ShieldCheck size={18} className="text-slate-900" />
+          </div>
+          <span className="text-lg font-bold text-slate-50">VaxWise</span>
+          <span className="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700 ml-1">Certificate Verification</span>
         </div>
 
         {isLoading && (
-          <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '48px', border: '1px solid #1F3326', textAlign: 'center', color: '#8C8677' }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-12 text-center text-slate-400 text-sm">
             Verifying certificate…
           </div>
         )}
 
         {error && (
-          <div style={{ background: '#1A0A0A', borderRadius: '16px', padding: '40px', border: '1px solid rgba(239,68,68,0.3)', textAlign: 'center' }}>
-            <p style={{ fontSize: '32px', marginBottom: '12px' }}>✕</p>
-            <p style={{ color: '#EF4444', fontWeight: '700', fontSize: '16px', marginBottom: '8px' }}>Certificate Not Found</p>
-            <p style={{ color: '#8C8677', fontSize: '13px' }}>Certificate #{certId} does not exist or has been removed.</p>
+          <div className="bg-red-500/10 border border-red-500/25 rounded-2xl p-10 text-center">
+            <p className="text-3xl mb-3">✕</p>
+            <p className="text-red-400 font-bold text-base mb-2">Certificate Not Found</p>
+            <p className="text-slate-400 text-sm">Certificate #{certId} does not exist or has been removed.</p>
           </div>
         )}
 
         {cert && (() => {
-          const s = STATUS_STYLE[cert.verificationStatus] || STATUS_STYLE.Tampered;
+          const s = CERT_STATUS[cert.verificationStatus] || CERT_STATUS.Tampered;
           return (
             <>
               {/* Status banner */}
-              <div style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: '14px', padding: '20px 24px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: s.bg, border: `2px solid ${s.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: s.color, fontWeight: '700', flexShrink: 0 }}>{s.icon}</div>
+              <div className={`border rounded-2xl px-6 py-5 mb-5 flex items-center gap-4 ${s.cls}`}>
+                <div className={`w-11 h-11 rounded-full border-2 flex items-center justify-center text-xl font-bold shrink-0 ${s.cls}`}>{s.icon}</div>
                 <div>
-                  <p style={{ fontSize: '18px', fontFamily: "'Playfair Display', serif", color: s.color, fontWeight: '700', marginBottom: '2px' }}>
+                  <p className={`text-lg font-bold mb-0.5 ${s.cls.split(' ').find(c => c.startsWith('text-'))}`}>
                     {cert.verificationStatus === 'Valid' ? 'Certificate Valid' : cert.verificationStatus === 'Expired' ? 'Certificate Expired' : 'Certificate Tampered'}
                   </p>
-                  <p style={{ fontSize: '12px', color: '#8C8677' }}>
+                  <p className="text-xs text-slate-400">
                     {cert.verificationStatus === 'Valid'
                       ? `Valid until ${new Date(cert.expiresAt).toLocaleDateString('en-ZA')}`
                       : cert.verificationStatus === 'Expired'
@@ -73,9 +76,9 @@ export default function PublicVerifyPage() {
               </div>
 
               {/* Details card */}
-              <div style={{ background: '#1A2B1F', borderRadius: '14px', padding: '24px 28px', border: '1px solid #1F3326' }}>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '4px' }}>Vaccination Certificate</h3>
-                <p style={{ fontSize: '12px', color: '#8C8677', marginBottom: '20px' }}>Certificate #{cert.certId}</p>
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl px-7 py-6">
+                <h3 className="text-lg font-bold text-slate-50 mb-1">Vaccination Certificate</h3>
+                <p className="text-xs text-slate-400 mb-5">Certificate #{cert.certId}</p>
 
                 <Row label="Animal Ear Tag" value={cert.animalEarTag} mono />
                 <Row label="Farmer" value={cert.farmerName} />
@@ -87,13 +90,13 @@ export default function PublicVerifyPage() {
                 <Row label="Issued" value={new Date(cert.issuedAt ?? cert.eventTimestamp).toLocaleDateString('en-ZA')} />
                 <Row label="Expires" value={new Date(cert.expiresAt).toLocaleDateString('en-ZA')} />
 
-                <div style={{ marginTop: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Audit Hash (SHA-256)</span>
-                  <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#4A4A42', wordBreak: 'break-all', marginTop: '6px', padding: '10px 12px', background: '#162219', borderRadius: '6px', border: '1px solid #1F3326' }}>{cert.auditHash}</p>
+                <div className="mt-1">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Audit Hash (SHA-256)</span>
+                  <p className="font-mono text-[11px] text-slate-500 break-all mt-1.5 px-3 py-2.5 bg-slate-900 rounded-md border border-slate-700">{cert.auditHash}</p>
                 </div>
               </div>
 
-              <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#4A4A42' }}>
+              <p className="text-center mt-6 text-xs text-slate-600">
                 Verified by VaxWise · DALRRD-aligned biosecurity platform
               </p>
             </>
