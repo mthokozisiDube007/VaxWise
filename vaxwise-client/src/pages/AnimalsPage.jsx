@@ -1,28 +1,35 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv, updateAnimalWeight } from '../api/animalsApi';
+import { getAllAnimals, createAnimal, updateAnimal, deleteAnimal, exportAnimalsCsv, exportAnimalsPdf, updateAnimalWeight } from '../api/animalsApi';
 import { recordTreatment } from '../api/healthApi';
 import { useAuth } from '../context/AuthContext';
 import { useMobile } from '../hooks/useMobile';
+import { useFormErrors } from '../hooks/useFormErrors';
+import FieldError from '../components/FieldError';
 
-const S = {
-  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
-  inp: { width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid #2D4A34', fontSize: '14px', boxSizing: 'border-box', background: '#162219', color: '#F0EDE8', fontFamily: "'DM Sans', sans-serif", outline: 'none', transition: 'border-color 0.15s' },
-  lbl: { display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.6px' },
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
-  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
-};
+const inp = 'w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors';
+const lbl = 'block mb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider';
+const th = 'px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide bg-slate-900/50';
+const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
 
 const STATUS = {
-  Active: { bg: '#052E16', color: '#22C55E', label: 'Active' },
-  UnderTreatment: { bg: '#450A0A', color: '#EF4444', label: 'Treatment' },
-  Quarantined: { bg: '#431407', color: '#F59E0B', label: 'Quarantine' },
-  Sold: { bg: '#1A2B1F', color: '#8C8677', label: 'Sold' },
-  Deceased: { bg: '#1A2B1F', color: '#4A4A42', label: 'Deceased' },
+  Active:         { cls: 'bg-teal-500/10 text-teal-400 border-teal-500/25',   label: 'Active' },
+  UnderTreatment: { cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25', label: 'Treatment' },
+  Quarantined:    { cls: 'bg-red-500/10 text-red-400 border-red-500/25',      label: 'Quarantine' },
+  Sold:           { cls: 'bg-slate-500/10 text-slate-400 border-slate-500/25', label: 'Sold' },
+  Deceased:       { cls: 'bg-slate-700/30 text-slate-500 border-slate-600/25', label: 'Deceased' },
 };
 
 const SICK_FORM_INIT = { symptoms: '', severity: 'Mild', notes: '' };
+
+const BREEDS = {
+  1: ['Angus','Bonsmara','Brahman','Boran','Drakensberger','Friesland','Hereford','Holstein','Jersey','Limousin','Nguni','Simmental','South Devon','Sussex','Tuli'],
+  2: ['Merino','Dohne Merino','Dorper','South African Mutton Merino','Damara','Persian','Romanov','Karakul','Suffolk','Van Rooy','Meatmaster'],
+  3: ['Boer','Saanen','Alpine','Kalahari Red','Savanna','Toggenburg','Angora','Indigenous Veld Goat'],
+  4: ['Large White','Landrace','South African Landrace','Duroc','Hampshire','Pietrain','Kolbroek','Windsnyer'],
+  5: ['Boschveld','Potchefstroom Koekoek','Naked Neck','Ovambo','Venda','Australorp','Rhode Island Red','Leghorn','Plymouth Rock','New Hampshire'],
+};
 
 export default function AnimalsPage() {
   const { hasRole } = useAuth();
@@ -32,7 +39,9 @@ export default function AnimalsPage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [form, setForm] = useState({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+  const [form, setForm] = useState({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0 });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ breed: '', currentWeightKg: 0, status: 'Active' });
   // Farm Worker — weight update
@@ -44,6 +53,7 @@ export default function AnimalsPage() {
   const [sickSaving, setSickSaving] = useState(false);
   const [sickError, setSickError] = useState('');
   const isMobile = useMobile();
+  const animalErr = useFormErrors();
 
   const { data: animals = [], isLoading } = useQuery({ queryKey: ['animals'], queryFn: getAllAnimals });
 
@@ -52,7 +62,8 @@ export default function AnimalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['animals'] });
       setShowForm(false);
-      setForm({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0, purchaseDate: '', purchasePrice: 0 });
+      setForm({ earTagNumber: '', rfidTag: '', animalTypeId: 1, breed: '', dateOfBirth: '', gender: 'M', currentWeightKg: 0 });
+      animalErr.clearAll();
     },
   });
 
@@ -93,28 +104,43 @@ export default function AnimalsPage() {
   };
 
   if (isLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading animals…</div>
+    <div className="flex flex-col gap-4 animate-pulse">
+      <div className="h-8 bg-slate-800 rounded-lg w-48" />
+      <div className="h-64 bg-slate-800 rounded-xl border border-slate-700" />
+    </div>
   );
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="text-slate-50">
+      <div className="flex justify-between items-start mb-8 flex-wrap gap-3">
         <div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>Animal Registry</h1>
-          <p style={{ color: '#8C8677', fontSize: '14px' }}>{animals.length} animal{animals.length !== 1 ? 's' : ''} registered</p>
+          <h1 className="text-3xl font-bold text-slate-50 mb-1">Animal Registry</h1>
+          <p className="text-slate-400 text-sm">{animals.length} animal{animals.length !== 1 ? 's' : ''} registered</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="flex gap-2.5 items-center">
           <button
             onClick={async () => { setExporting(true); try { await exportAnimalsCsv(); } finally { setExporting(false); } }}
             disabled={exporting}
-            style={{ background: 'none', border: '1px solid #2D4A34', color: '#8C8677', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: '600', cursor: exporting ? 'wait' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors disabled:opacity-60"
           >
             {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
+          {(hasRole('Admin') || hasRole('FarmOwner')) && (
+            <button
+              onClick={async () => { setExportingPdf(true); setPdfError(''); try { await exportAnimalsPdf(); } catch { setPdfError('PDF export failed. Please try again.'); } finally { setExportingPdf(false); } }}
+              disabled={exportingPdf}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded-lg text-sm transition-colors disabled:opacity-60"
+            >
+              {exportingPdf ? 'Generating…' : 'Export PDF'}
+            </button>
+          )}
+          {pdfError && <span className="text-red-400 text-xs">{pdfError}</span>}
           {(hasRole('FarmOwner') || hasRole('FarmManager')) && (
             <button
-              onClick={() => setShowForm(!showForm)}
-              style={{ padding: '10px 22px', background: showForm ? 'transparent' : '#22C55E', color: showForm ? '#22C55E' : '#0B1F14', border: showForm ? '1.5px solid #22C55E' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}
+              onClick={() => { setShowForm(v => !v); animalErr.clearAll(); }}
+              className={showForm
+                ? 'inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors'
+                : 'inline-flex items-center gap-1.5 px-3 py-2 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-sm transition-colors'}
             >
               {showForm ? 'Cancel' : '+ Register Animal'}
             </button>
@@ -123,67 +149,87 @@ export default function AnimalsPage() {
       </div>
 
       {showForm && (
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '20px' }}>Register New Animal</h3>
-          <form onSubmit={e => { e.preventDefault(); createMutation.mutate(form); }}>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5">
+          <h3 className="text-xl font-semibold text-slate-50 mb-5">Register New Animal</h3>
+          <form onSubmit={e => {
+            e.preventDefault();
+            const ok = animalErr.validate({
+              earTagNumber: () => !form.earTagNumber.trim() ? 'Ear tag number is required' : '',
+              rfidTag: () => !form.rfidTag.trim() ? 'RFID tag is required' : '',
+              breed: () => !form.breed ? 'Please select a breed' : '',
+              dateOfBirth: () => !form.dateOfBirth ? 'Date of birth is required' : '',
+            });
+            if (!ok) return;
+            createMutation.mutate(form);
+          }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-5`}>
               {[
                 { label: 'Ear Tag Number', key: 'earTagNumber', type: 'text' },
                 { label: 'RFID Tag', key: 'rfidTag', type: 'text' },
-                { label: 'Breed', key: 'breed', type: 'text' },
                 { label: 'Date of Birth', key: 'dateOfBirth', type: 'date' },
-                { label: 'Purchase Date', key: 'purchaseDate', type: 'date' },
-                { label: 'Purchase Price (R)', key: 'purchasePrice', type: 'number' },
                 { label: 'Weight (kg)', key: 'currentWeightKg', type: 'number' },
               ].map(({ label, key, type }) => (
                 <div key={key}>
-                  <label style={S.lbl}>{label}</label>
+                  <label className={lbl}>{label}</label>
                   <input
                     type={type}
                     value={form[key]}
-                    onChange={e => setForm({ ...form, [key]: e.target.value })}
-                    required
-                    style={{ ...S.inp, colorScheme: type === 'date' ? 'dark' : undefined }}
-                    onFocus={e => e.target.style.borderColor = '#22C55E'}
-                    onBlur={e => e.target.style.borderColor = '#2D4A34'}
+                    onChange={animalErr.field(key).onChange(e => setForm({ ...form, [key]: e.target.value }))}
+                    className={inp}
+                    style={animalErr.field(key).style({ colorScheme: type === 'date' ? 'dark' : undefined })}
+                    onFocus={animalErr.field(key).onFocus}
+                    onBlur={animalErr.field(key).onBlur}
                   />
+                  <FieldError msg={animalErr.field(key).error} />
                 </div>
               ))}
               <div>
-                <label style={S.lbl}>Animal Type</label>
+                <label className={lbl}>Animal Type</label>
                 <select
                   value={form.animalTypeId}
-                  onChange={e => setForm({ ...form, animalTypeId: parseInt(e.target.value) })}
-                  style={S.inp}
-                  onFocus={e => e.target.style.borderColor = '#22C55E'}
-                  onBlur={e => e.target.style.borderColor = '#2D4A34'}
+                  onChange={e => setForm({ ...form, animalTypeId: parseInt(e.target.value), breed: '' })}
+                  className={inp}
                 >
                   {[['Cattle',1],['Sheep',2],['Goat',3],['Pig',4],['Chicken',5]].map(([n,v]) => (
-                    <option key={v} value={v} style={{ background: '#162219' }}>{n}</option>
+                    <option key={v} value={v} className="bg-slate-800">{n}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label style={S.lbl}>Gender</label>
+                <label className={lbl}>Breed</label>
+                <select
+                  value={form.breed}
+                  onChange={animalErr.field('breed').onChange(e => setForm({ ...form, breed: e.target.value }))}
+                  className={inp}
+                  onFocus={animalErr.field('breed').onFocus}
+                  onBlur={animalErr.field('breed').onBlur}
+                >
+                  <option value="" className="bg-slate-800">— Select breed —</option>
+                  {(BREEDS[form.animalTypeId] || []).map(b => (
+                    <option key={b} value={b} className="bg-slate-800">{b}</option>
+                  ))}
+                </select>
+                <FieldError msg={animalErr.field('breed').error} />
+              </div>
+              <div>
+                <label className={lbl}>Gender</label>
                 <select
                   value={form.gender}
                   onChange={e => setForm({ ...form, gender: e.target.value })}
-                  style={S.inp}
-                  onFocus={e => e.target.style.borderColor = '#22C55E'}
-                  onBlur={e => e.target.style.borderColor = '#2D4A34'}
+                  className={inp}
                 >
-                  <option value="M" style={{ background: '#162219' }}>Male</option>
-                  <option value="F" style={{ background: '#162219' }}>Female</option>
+                  <option value="M" className="bg-slate-800">Male</option>
+                  <option value="F" className="bg-slate-800">Female</option>
                 </select>
               </div>
             </div>
             {createMutation.isError && (
-              <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>Failed to register animal. Please check all fields.</p>
+              <p className="text-red-400 text-sm mb-3">Failed to register animal. Please check all fields.</p>
             )}
             <button
               type="submit"
               disabled={createMutation.isPending}
-              style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '10px 24px', borderRadius: '8px', cursor: createMutation.isPending ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: createMutation.isPending ? 0.7 : 1 }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-sm transition-colors disabled:opacity-60"
             >
               {createMutation.isPending ? 'Registering…' : 'Register Animal'}
             </button>
@@ -191,83 +237,86 @@ export default function AnimalsPage() {
         </div>
       )}
 
-      <div style={S.card}>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5">
         {animals.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: '#4A4A42' }}>
-            <p style={{ fontSize: '32px', marginBottom: '10px', color: '#8C8677' }}>◈</p>
-            <p style={{ fontSize: '15px', fontWeight: '500', color: '#8C8677', marginBottom: '6px' }}>No animals registered yet</p>
-            <p style={{ fontSize: '13px' }}>Click "Register Animal" to add your first livestock record.</p>
+          <div className="text-center py-12 text-slate-600">
+            <p className="text-3xl mb-2.5 text-slate-400">◈</p>
+            <p className="text-sm font-medium text-slate-400 mb-1.5">No animals registered yet</p>
+            <p className="text-xs">Click "Register Animal" to add your first livestock record.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['Ear Tag', 'Type', 'Breed', 'Gender', 'Weight', 'Status', 'Compliance', 'Actions'].map(h => (
-                    <th key={h} style={S.th}>{h}</th>
+                    <th key={h} className={th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>{animals.map((animal, i) => {
-                const st = STATUS[animal.status] || { bg: '#1A2B1F', color: '#8C8677', label: animal.status };
+                const st = STATUS[animal.status] || STATUS.Active;
                 const score = animal.complianceScore ?? 0;
-                const scoreColor = score >= 80 ? '#22C55E' : score >= 60 ? '#F59E0B' : '#EF4444';
+                const scoreColor = score >= 80 ? 'bg-teal-500' : score >= 60 ? 'bg-amber-400' : 'bg-red-400';
+                const scoreText = score >= 80 ? 'text-teal-400' : score >= 60 ? 'text-amber-400' : 'text-red-400';
                 return (
-                  <tr key={animal.animalId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                    <td style={{ ...S.td, fontWeight: '700', color: '#22C55E', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>
+                  <tr key={animal.animalId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                    <td className={`${td} font-bold text-teal-400 font-mono text-[13px]`}>
                       {isOwnerOrManager ? (
                         <button onClick={() => navigate(`/animals/${animal.animalId}`)}
-                          style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: '700', fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', padding: 0, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                          className="bg-transparent border-none text-teal-400 cursor-pointer font-bold font-mono text-[13px] p-0 underline underline-offset-[3px]">
                           {animal.earTagNumber}
                         </button>
                       ) : animal.earTagNumber}
                     </td>
-                    <td style={S.td}>{animal.animalTypeName}</td>
-                    <td style={S.td}>
+                    <td className={td}>{animal.animalTypeName}</td>
+                    <td className={td}>
                       {editingId === animal.animalId
-                        ? <input value={editForm.breed} onChange={e => setEditForm(f => ({ ...f, breed: e.target.value }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '13px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                        ? <input value={editForm.breed} onChange={e => setEditForm(f => ({ ...f, breed: e.target.value }))} className="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-sm text-slate-50 outline-none focus:border-teal-500 transition-colors" />
                         : animal.breed}
                     </td>
-                    <td style={S.td}>{animal.gender === 'M' ? 'Male' : 'Female'}</td>
-                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '13px' }}>
+                    <td className={td}>{animal.gender === 'M' ? 'Male' : 'Female'}</td>
+                    <td className={`${td} font-mono text-[13px]`}>
                       {editingId === animal.animalId
-                        ? <input type="number" value={editForm.currentWeightKg} onChange={e => setEditForm(f => ({ ...f, currentWeightKg: parseFloat(e.target.value) }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '13px', width: '80px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                        ? <input type="number" value={editForm.currentWeightKg} onChange={e => setEditForm(f => ({ ...f, currentWeightKg: parseFloat(e.target.value) }))} className="w-20 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-sm text-slate-50 outline-none focus:border-teal-500 transition-colors" />
                         : `${animal.currentWeightKg} kg`}
                     </td>
-                    <td style={S.td}>
+                    <td className={td}>
                       {editingId === animal.animalId ? (
-                        <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} style={{ ...S.inp, padding: '5px 8px', fontSize: '12px' }} onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}>
-                          {Object.keys(STATUS).map(s => <option key={s} value={s} style={{ background: '#162219' }}>{s}</option>)}
+                        <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-50 outline-none focus:border-teal-500 transition-colors">
+                          {Object.keys(STATUS).map(s => <option key={s} value={s} className="bg-slate-800">{s}</option>)}
                         </select>
                       ) : (
-                        <span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{st.label}</span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${STATUS[animal.status]?.cls ?? STATUS.Active.cls}`}>
+                          ● {STATUS[animal.status]?.label ?? animal.status}
+                        </span>
                       )}
                     </td>
-                    <td style={S.td}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, height: '6px', background: '#1F3326', borderRadius: '3px', maxWidth: '72px', overflow: 'hidden' }}>
-                          <div style={{ width: `${score}%`, height: '100%', background: scoreColor, borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
+                    <td className={td}>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-slate-700 rounded-full max-w-[72px] overflow-hidden">
+                          <div className={`h-full ${scoreColor} rounded-full transition-[width] duration-700`} style={{ width: `${score}%` }} />
                         </div>
-                        <span style={{ fontSize: '12px', color: scoreColor, fontFamily: "'JetBrains Mono', monospace", fontWeight: '600' }}>{score}%</span>
+                        <span className={`text-xs font-mono font-semibold ${scoreText}`}>{score}%</span>
                       </div>
                     </td>
-                    <td style={S.td}>
+                    <td className={td}>
                       {/* Owner/Manager: full edit */}
                       {isOwnerOrManager && (
                         editingId === animal.animalId ? (
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div className="flex gap-1.5">
                             <button onClick={() => updateMutation.mutate({ id: animal.animalId, ...editForm })} disabled={updateMutation.isPending}
-                              style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-sm transition-colors disabled:opacity-60">Save</button>
                             <button onClick={() => setEditingId(null)}
-                              style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div className="flex gap-1.5">
                             <button onClick={() => { setEditingId(animal.animalId); setEditForm({ breed: animal.breed, currentWeightKg: animal.currentWeightKg, status: animal.status }); }}
-                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>Edit</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors">Edit</button>
                             {hasRole('Admin') && (
                               <button onClick={() => deleteMutation.mutate(animal.animalId)}
-                                style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Delete</button>
+                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs transition-colors">Delete</button>
                             )}
                           </div>
                         )
@@ -276,21 +325,20 @@ export default function AnimalsPage() {
                       {/* Farm Worker: weight update + report sick */}
                       {isWorker && (
                         weightEditId === animal.animalId ? (
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div className="flex gap-1.5 items-center">
                             <input type="number" value={weightValue} onChange={e => setWeightValue(e.target.value)}
-                              style={{ ...S.inp, padding: '4px 8px', fontSize: '13px', width: '72px' }}
-                              onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'} />
+                              className="w-[72px] px-2 py-1 bg-slate-800 border border-slate-700 rounded text-sm text-slate-50 outline-none focus:border-teal-500 transition-colors" />
                             <button onClick={() => weightMutation.mutate({ id: animal.animalId, weightKg: parseFloat(weightValue) })} disabled={weightMutation.isPending}
-                              style={{ background: '#22C55E', color: '#0B1F14', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif" }}>Save</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-500 hover:bg-teal-600 text-slate-900 font-semibold rounded-lg text-sm transition-colors disabled:opacity-60">Save</button>
                             <button onClick={() => setWeightEditId(null)}
-                              style={{ background: 'transparent', color: '#8C8677', border: '1px solid #2D4A34', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>✕</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors">✕</button>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div className="flex gap-1.5">
                             <button onClick={() => { setWeightEditId(animal.animalId); setWeightValue(String(animal.currentWeightKg)); }}
-                              style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>⚖ Weight</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors">⚖ Weight</button>
                             <button onClick={() => { setSickAnimal(animal); setSickForm(SICK_FORM_INIT); setSickError(''); }}
-                              style={{ background: '#450A0A', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>🚨 Sick</button>
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs transition-colors">🚨 Sick</button>
                           </div>
                         )
                       )}
@@ -304,52 +352,58 @@ export default function AnimalsPage() {
       </div>
       {/* Report Sick Modal */}
       {sickAnimal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
-          <div style={{ background: '#1A2B1F', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', border: '1px solid #1F3326' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-5">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-[480px]">
+            <div className="flex justify-between items-center mb-5">
               <div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#EF4444', marginBottom: '2px' }}>Report Sick Animal</h3>
-                <p style={{ fontSize: '13px', color: '#8C8677' }}>{sickAnimal.earTagNumber} · {sickAnimal.animalTypeName}</p>
+                <h3 className="text-xl font-semibold text-red-400 mb-0.5">Report Sick Animal</h3>
+                <p className="text-sm text-slate-400">{sickAnimal.earTagNumber} · {sickAnimal.animalTypeName}</p>
               </div>
-              <button onClick={() => setSickAnimal(null)} style={{ background: 'none', border: 'none', color: '#8C8677', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setSickAnimal(null)} className="bg-transparent border-none text-slate-400 text-xl cursor-pointer hover:text-slate-200 transition-colors">✕</button>
             </div>
 
-            <label style={S.lbl}>Symptoms *</label>
+            <label className={lbl}>Symptoms *</label>
             <textarea
               value={sickForm.symptoms}
               onChange={e => setSickForm(f => ({ ...f, symptoms: e.target.value }))}
               placeholder="Describe what you observed (e.g. limping, not eating, discharge)…"
               rows={4}
-              style={{ ...S.inp, resize: 'vertical', marginBottom: '16px' }}
-              onFocus={e => e.target.style.borderColor = '#EF4444'} onBlur={e => e.target.style.borderColor = '#2D4A34'}
+              className={`${inp} resize-y mb-4`}
             />
 
-            <label style={S.lbl}>Severity</label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <label className={lbl}>Severity</label>
+            <div className="flex gap-2 mb-4">
               {['Mild', 'Moderate', 'Severe', 'Critical'].map(sv => (
                 <button key={sv} onClick={() => setSickForm(f => ({ ...f, severity: sv }))}
-                  style={{ flex: 1, padding: '7px', borderRadius: '8px', border: '1.5px solid', borderColor: sickForm.severity === sv ? (sv === 'Critical' || sv === 'Severe' ? '#EF4444' : sv === 'Moderate' ? '#F59E0B' : '#22C55E') : '#2D4A34', background: sickForm.severity === sv ? 'rgba(239,68,68,0.1)' : '#162219', color: sickForm.severity === sv ? '#F0EDE8' : '#8C8677', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                  className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                    sickForm.severity === sv
+                      ? (sv === 'Critical' || sv === 'Severe')
+                        ? 'border-red-400 bg-red-500/10 text-slate-50'
+                        : sv === 'Moderate'
+                          ? 'border-amber-400 bg-amber-500/10 text-slate-50'
+                          : 'border-teal-400 bg-teal-500/10 text-slate-50'
+                      : 'border-slate-700 bg-slate-800 text-slate-400'
+                  }`}
                 >{sv}</button>
               ))}
             </div>
 
-            <label style={S.lbl}>Additional Notes</label>
+            <label className={lbl}>Additional Notes</label>
             <textarea
               value={sickForm.notes}
               onChange={e => setSickForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Any other observations…"
               rows={2}
-              style={{ ...S.inp, resize: 'vertical', marginBottom: '20px' }}
-              onFocus={e => e.target.style.borderColor = '#22C55E'} onBlur={e => e.target.style.borderColor = '#2D4A34'}
+              className={`${inp} resize-y mb-5`}
             />
 
-            {sickError && <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px' }}>{sickError}</p>}
+            {sickError && <p className="text-red-400 text-sm mb-3">{sickError}</p>}
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="flex gap-2.5">
               <button onClick={() => setSickAnimal(null)}
-                style={{ flex: 1, background: 'transparent', border: '1px solid #2D4A34', color: '#8C8677', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
               <button onClick={handleReportSick} disabled={sickSaving}
-                style={{ flex: 2, background: '#EF4444', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: sickSaving ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '700', fontFamily: "'DM Sans', sans-serif", opacity: sickSaving ? 0.7 : 1 }}>
+                className="flex-[2] inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-60">
                 {sickSaving ? 'Submitting…' : '🚨 Submit Health Alert'}
               </button>
             </div>
