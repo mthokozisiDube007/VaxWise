@@ -5,28 +5,31 @@ import { getVaccinationsByAnimal } from '../api/vaccinationsApi';
 import { getHealthRecords } from '../api/healthApi';
 import { useMobile } from '../hooks/useMobile';
 
-const S = {
-  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '20px' },
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
-  td: { padding: '13px 14px', fontSize: '14px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
-};
+const th = 'px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide bg-slate-900/50';
+const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
+const card = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5';
 
 const STATUS = {
-  Active: { bg: '#052E16', color: '#22C55E' },
-  UnderTreatment: { bg: '#450A0A', color: '#EF4444' },
-  Quarantined: { bg: '#431407', color: '#F59E0B' },
-  Sold: { bg: '#1A2B1F', color: '#8C8677' },
-  Deceased: { bg: '#1A2B1F', color: '#4A4A42' },
+  Active:        { cls: 'bg-teal-500/10 text-teal-400 border-teal-500/25',   label: 'Active' },
+  UnderTreatment:{ cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25', label: 'Treatment' },
+  Quarantined:   { cls: 'bg-red-500/10 text-red-400 border-red-500/25',      label: 'Quarantine' },
+  Sold:          { cls: 'bg-slate-500/10 text-slate-400 border-slate-500/25', label: 'Sold' },
+  Deceased:      { cls: 'bg-slate-700/30 text-slate-500 border-slate-600/25', label: 'Deceased' },
 };
 
-const SEV_COLOR = { Mild: '#22C55E', Moderate: '#F59E0B', Severe: '#EF4444', Critical: '#EF4444' };
+const sevColor = (sev) => {
+  if (sev === 'Critical') return 'text-red-400 border-red-500/25 bg-red-500/10';
+  if (sev === 'High') return 'text-red-400 border-red-500/25 bg-red-500/10';
+  if (sev === 'Medium') return 'text-amber-400 border-amber-500/25 bg-amber-500/10';
+  return 'text-teal-400 border-teal-500/25 bg-teal-500/10';
+};
 
 function StatBox({ label, value, sub }) {
   return (
-    <div style={{ background: '#162219', borderRadius: '10px', padding: '16px 20px', border: '1px solid #1F3326' }}>
-      <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{label}</p>
-      <p style={{ fontSize: '22px', fontWeight: '700', color: '#F0EDE8', fontFamily: "'Playfair Display', serif" }}>{value}</p>
-      {sub && <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '4px' }}>{sub}</p>}
+    <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-2">{label}</p>
+      <p className="text-2xl font-bold text-slate-50">{value}</p>
+      {sub && <p className="text-xs text-slate-600 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -42,7 +45,6 @@ export default function AnimalProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useMobile();
-  const pad = isMobile ? '16px' : '28px 32px';
 
   const { data: animal, isLoading: loadingAnimal } = useQuery({
     queryKey: ['animal', id],
@@ -62,54 +64,54 @@ export default function AnimalProfilePage() {
   });
 
   if (loadingAnimal) return (
-    <div style={{ padding: '40px', color: '#8C8677', fontFamily: "'DM Sans', sans-serif" }}>Loading profile…</div>
+    <div className="p-10 text-slate-400">Loading profile…</div>
   );
   if (!animal) return (
-    <div style={{ padding: '40px', color: '#EF4444', fontFamily: "'DM Sans', sans-serif" }}>Animal not found.</div>
+    <div className="p-10 text-red-400">Animal not found.</div>
   );
 
-  const st = STATUS[animal.status] || { bg: '#1A2B1F', color: '#8C8677' };
   const score = animal.complianceScore ?? 0;
-  const scoreColor = score >= 80 ? '#22C55E' : score >= 60 ? '#F59E0B' : '#EF4444';
+  const scoreColorClass = score >= 80 ? 'text-teal-400' : score >= 60 ? 'text-amber-400' : 'text-red-400';
+  const scoreStrokeColor = score >= 80 ? '#2dd4bf' : score >= 60 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
+    <div className="text-slate-50">
 
       {/* Back button */}
       <button
         onClick={() => navigate('/animals')}
-        style={{ background: 'none', border: 'none', color: '#8C8677', fontSize: '13px', cursor: 'pointer', marginBottom: '20px', padding: 0, display: 'flex', alignItems: 'center', gap: '6px', fontFamily: "'DM Sans', sans-serif" }}
+        className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors mb-5"
       >
         ← Back to Animals
       </button>
 
       {/* Animal header */}
-      <div style={{ ...S.card, padding: pad }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+      <div className={card}>
+        <div className="flex justify-between items-start flex-wrap gap-4 mb-6">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-              <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '28px' : '36px', fontWeight: '700', color: '#22C55E' }}>
+            <div className="flex items-center gap-3 mb-1.5">
+              <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold text-teal-400`}>
                 {animal.earTagNumber}
               </h1>
-              <span style={{ background: st.bg, color: st.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${STATUS[animal.status]?.cls ?? STATUS.Active.cls}`}>
                 {animal.status}
               </span>
             </div>
-            <p style={{ color: '#8C8677', fontSize: '15px' }}>
+            <p className="text-slate-400 text-[15px]">
               {animal.animalTypeName} · {animal.breed} · {animal.gender === 'M' ? 'Male' : 'Female'}
             </p>
           </div>
 
           {/* Compliance ring */}
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Compliance</p>
-            <div style={{ position: 'relative', width: '72px', height: '72px' }}>
-              <svg viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', width: '72px', height: '72px' }}>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1F3326" strokeWidth="3" />
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke={scoreColor} strokeWidth="3"
+          <div className="text-center">
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-1.5">Compliance</p>
+            <div className="relative w-[72px] h-[72px]">
+              <svg viewBox="0 0 36 36" className="rotate-[-90deg] w-[72px] h-[72px]">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke={scoreStrokeColor} strokeWidth="3"
                   strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round" />
               </svg>
-              <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', color: scoreColor, fontFamily: "'Playfair Display', serif" }}>
+              <span className={`absolute inset-0 flex items-center justify-center text-base font-bold ${scoreColorClass}`}>
                 {score}%
               </span>
             </div>
@@ -117,7 +119,7 @@ export default function AnimalProfilePage() {
         </div>
 
         {/* Stat boxes */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+        <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
           <StatBox label="Age" value={ageFromDob(animal.dateOfBirth)} sub={new Date(animal.dateOfBirth).toLocaleDateString('en-ZA')} />
           <StatBox label="Weight" value={`${animal.currentWeightKg} kg`} />
           <StatBox label="RFID Tag" value={animal.rfidTag || '—'} />
@@ -126,31 +128,31 @@ export default function AnimalProfilePage() {
       </div>
 
       {/* Vaccination history */}
-      <div style={{ ...S.card, padding: pad }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className={card}>
+        <div className="flex justify-between items-center mb-5">
           <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Vaccination History</h2>
-            <p style={{ fontSize: '13px', color: '#8C8677' }}>{vaccinations.length} event{vaccinations.length !== 1 ? 's' : ''} recorded</p>
+            <h2 className="text-xl text-slate-50 mb-0.5">Vaccination History</h2>
+            <p className="text-[13px] text-slate-400">{vaccinations.length} event{vaccinations.length !== 1 ? 's' : ''} recorded</p>
           </div>
-          <span style={{ background: vaccinations.length > 0 ? '#052E16' : '#1A2B1F', color: vaccinations.length > 0 ? '#22C55E' : '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #1F3326' }}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${vaccinations.length > 0 ? STATUS.Active.cls : STATUS.Sold.cls}`}>
             {vaccinations.length} total
           </span>
         </div>
 
         {loadingVacc ? (
-          <p style={{ color: '#8C8677', fontSize: '14px' }}>Loading…</p>
+          <p className="text-slate-400 text-sm">Loading…</p>
         ) : vaccinations.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px', color: '#4A4A42' }}>
-            <p style={{ fontSize: '24px', marginBottom: '8px' }}>◈</p>
+          <div className="text-center py-8 text-slate-600">
+            <p className="text-2xl mb-2">◈</p>
             <p>No vaccinations recorded yet</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['Vaccine', 'Date', 'Batch', 'Dose', 'Vet / SAVC', 'Next Due'].map(h => (
-                    <th key={h} style={S.th}>{h}</th>
+                    <th key={h} className={th}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -158,15 +160,19 @@ export default function AnimalProfilePage() {
                 {vaccinations.map((v, i) => {
                   const overdue = v.nextDueDate && new Date(v.nextDueDate) < new Date();
                   return (
-                    <tr key={v.eventId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                      <td style={{ ...S.td, fontWeight: '600', color: '#22C55E' }}>{v.vaccineName}</td>
-                      <td style={S.td}>{new Date(v.eventTimestamp).toLocaleDateString('en-ZA')}</td>
-                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#8C8677' }}>{v.vaccineBatch || '—'}</td>
-                      <td style={S.td}>{v.doseMl ? `${v.doseMl} ml` : '—'}</td>
-                      <td style={{ ...S.td, fontSize: '13px' }}>{v.savcNumber || v.veterinarianName || '—'}</td>
-                      <td style={{ ...S.td, color: overdue ? '#EF4444' : '#F0EDE8', fontWeight: overdue ? '600' : '400' }}>
+                    <tr key={v.eventId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                      <td className={`${td} font-semibold text-teal-400`}>{v.vaccineName}</td>
+                      <td className={td}>{new Date(v.eventTimestamp).toLocaleDateString('en-ZA')}</td>
+                      <td className={`${td} font-mono text-xs text-slate-400`}>{v.vaccineBatch || '—'}</td>
+                      <td className={td}>{v.doseMl ? `${v.doseMl} ml` : '—'}</td>
+                      <td className={`${td} text-[13px]`}>{v.savcNumber || v.veterinarianName || '—'}</td>
+                      <td className={`${td} ${overdue ? 'text-red-400 font-semibold' : 'text-slate-300'}`}>
                         {v.nextDueDate ? new Date(v.nextDueDate).toLocaleDateString('en-ZA') : '—'}
-                        {overdue && <span style={{ marginLeft: '6px', fontSize: '11px', background: '#450A0A', color: '#EF4444', padding: '2px 6px', borderRadius: '10px' }}>OVERDUE</span>}
+                        {overdue && (
+                          <span className="ml-1.5 text-[11px] bg-red-500/10 text-red-400 border border-red-500/25 px-1.5 py-0.5 rounded-full">
+                            OVERDUE
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -178,52 +184,57 @@ export default function AnimalProfilePage() {
       </div>
 
       {/* Health history */}
-      <div style={{ ...S.card, padding: pad }}>
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Health Records</h2>
-          <p style={{ fontSize: '13px', color: '#8C8677' }}>{healthRecords.length} record{healthRecords.length !== 1 ? 's' : ''} on file</p>
+      <div className={card}>
+        <div className="mb-5">
+          <h2 className="text-xl text-slate-50 mb-0.5">Health Records</h2>
+          <p className="text-[13px] text-slate-400">{healthRecords.length} record{healthRecords.length !== 1 ? 's' : ''} on file</p>
         </div>
 
         {loadingHealth ? (
-          <p style={{ color: '#8C8677', fontSize: '14px' }}>Loading…</p>
+          <p className="text-slate-400 text-sm">Loading…</p>
         ) : healthRecords.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px', color: '#4A4A42' }}>
-            <p style={{ fontSize: '24px', marginBottom: '8px', color: '#22C55E' }}>✓</p>
+          <div className="text-center py-8 text-slate-600">
+            <p className="text-2xl mb-2 text-teal-400">✓</p>
             <p>No health issues recorded</p>
           </div>
         ) : (
           <div>
             {healthRecords.map((r) => {
-              const sevColor = SEV_COLOR[r.severity] || '#8C8677';
+              const sev = sevColor(r.severity);
+              const borderColor = r.severity === 'Critical' || r.severity === 'High'
+                ? 'border-red-400'
+                : r.severity === 'Medium'
+                ? 'border-amber-400'
+                : 'border-teal-400';
               return (
-                <div key={r.healthRecordId} style={{ borderLeft: `3px solid ${sevColor}`, paddingLeft: '16px', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                <div key={r.healthRecordId} className={`border-l-[3px] ${borderColor} pl-4 mb-5`}>
+                  <div className="flex justify-between items-start flex-wrap gap-2 mb-2">
                     <div>
-                      <span style={{ background: '#162219', color: sevColor, fontSize: '11px', fontWeight: '700', padding: '2px 10px', borderRadius: '20px', border: `1px solid ${sevColor}44`, marginRight: '8px' }}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${sev} mr-2`}>
                         {r.severity || r.recordType}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#4A4A42' }}>
+                      <span className="text-xs text-slate-600">
                         {new Date(r.treatmentDate || r.createdAt).toLocaleDateString('en-ZA')}
                       </span>
                     </div>
                     {r.isWithdrawalActive && (
-                      <span style={{ background: '#431407', color: '#F59E0B', fontSize: '11px', fontWeight: '700', padding: '2px 10px', borderRadius: '20px' }}>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-amber-500/10 text-amber-400 border-amber-500/25">
                         Withdrawal: {r.daysUntilClear}d remaining
                       </span>
                     )}
                   </div>
-                  <p style={{ fontSize: '14px', color: '#F0EDE8', marginBottom: '4px' }}><strong>Symptoms:</strong> {r.symptoms}</p>
+                  <p className="text-sm text-slate-50 mb-1"><strong>Symptoms:</strong> {r.symptoms}</p>
                   {r.diagnosis && r.diagnosis !== 'Pending veterinary assessment' && (
-                    <p style={{ fontSize: '13px', color: '#8C8677', marginBottom: '2px' }}><strong>Dx:</strong> {r.diagnosis}</p>
+                    <p className="text-[13px] text-slate-400 mb-0.5"><strong>Dx:</strong> {r.diagnosis}</p>
                   )}
                   {r.medicationUsed && (
-                    <p style={{ fontSize: '13px', color: '#8C8677', marginBottom: '2px' }}><strong>Tx:</strong> {r.medicationUsed}{r.dosage ? ` · ${r.dosage}` : ''}</p>
+                    <p className="text-[13px] text-slate-400 mb-0.5"><strong>Tx:</strong> {r.medicationUsed}{r.dosage ? ` · ${r.dosage}` : ''}</p>
                   )}
                   {r.vetName && r.vetName !== 'Farm Worker Report' && (
-                    <p style={{ fontSize: '12px', color: '#4A4A42' }}>Vet: {r.vetName}</p>
+                    <p className="text-xs text-slate-600">Vet: {r.vetName}</p>
                   )}
                   {r.outcome && (
-                    <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '4px', fontStyle: 'italic' }}>{r.outcome}</p>
+                    <p className="text-xs text-slate-600 mt-1 italic">{r.outcome}</p>
                   )}
                 </div>
               );
