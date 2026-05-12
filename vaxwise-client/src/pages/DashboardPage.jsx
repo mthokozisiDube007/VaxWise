@@ -5,7 +5,7 @@ import { getUpcomingVaccinations } from '../api/vaccinationsApi';
 import { downloadDalrrdReport } from '../api/reportsApi';
 import { useAuth } from '../context/AuthContext';
 import { useMobile } from '../hooks/useMobile';
-import { AlertTriangle, TrendingUp, Download, Calendar, Activity } from 'lucide-react';
+import { Download, Calendar } from 'lucide-react';
 
 const riskColor = (level) => {
   if (level === 'Critical' || level === 'High') return 'text-red-400';
@@ -60,10 +60,10 @@ export default function DashboardPage() {
   if (isLoading) return (
     <div className="flex flex-col gap-4 animate-pulse">
       <div className="h-8 bg-slate-800 rounded-lg w-48" />
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-slate-800 rounded-xl border border-slate-700" />)}
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-slate-800 rounded-xl border border-slate-700" />)}
       </div>
     </div>
