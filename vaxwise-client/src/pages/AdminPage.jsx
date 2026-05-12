@@ -2,22 +2,27 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getLoginStats, getAdminFarms, toggleFarmActive } from '../api/adminApi';
 
-const S = {
-  card: { background: '#1A2B1F', borderRadius: '14px', padding: '28px 32px', border: '1px solid #1F3326', marginBottom: '24px' },
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#8C8677', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#0B1F14', borderBottom: '1px solid #2D4A34' },
-  td: { padding: '12px 14px', fontSize: '13px', borderBottom: '1px solid #1F3326', color: '#F0EDE8' },
-};
+const th = 'px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wide bg-slate-900/50';
+const td = 'px-4 py-3 text-sm text-slate-300 border-b border-slate-700/50';
+const card = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5';
 
-const msColor = (ms) => ms <= 100 ? '#22C55E' : ms <= 300 ? '#F59E0B' : '#EF4444';
+const msColor = (ms) => ms <= 100 ? 'text-teal-400' : ms <= 300 ? 'text-amber-400' : 'text-red-400';
+const msColorHex = (ms) => ms <= 100 ? '#22C55E' : ms <= 300 ? '#F59E0B' : '#EF4444';
 const msLabel = (ms) => ms <= 100 ? 'Fast' : ms <= 300 ? 'Acceptable' : 'Slow';
 const scoreColor = (s) => s >= 75 ? '#22C55E' : s >= 50 ? '#F59E0B' : '#EF4444';
+const scoreColorClass = (s) => s >= 75 ? 'text-teal-400' : s >= 50 ? 'text-amber-400' : 'text-red-400';
+
+const topBorderStyle = (color) => ({ borderTop: `3px solid ${color || '#22C55E'}` });
 
 function StatCard({ label, value, sub, color, topBorder }) {
   return (
-    <div style={{ ...S.card, marginBottom: 0, borderTop: `3px solid ${topBorder || color || '#22C55E'}` }}>
-      <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '14px' }}>{label}</p>
-      <p style={{ fontSize: '48px', fontWeight: '700', color: color || '#F0EDE8', lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>{value}</p>
-      {sub && <p style={{ fontSize: '12px', color: '#4A4A42', marginTop: '8px' }}>{sub}</p>}
+    <div
+      className="bg-slate-800 border border-slate-700 rounded-xl p-5"
+      style={topBorderStyle(topBorder || color || '#22C55E')}
+    >
+      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-3.5">{label}</p>
+      <p className="text-5xl font-bold leading-none" style={{ color: color || undefined }} >{value}</p>
+      {sub && <p className="text-xs text-slate-600 mt-2">{sub}</p>}
     </div>
   );
 }
@@ -28,21 +33,32 @@ function HourlyChart({ hours }) {
   const now = new Date().getUTCHours();
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '64px' }}>
+      <div className="flex items-end gap-[3px] h-16">
         {hours.map(h => {
           const heightPct = Math.max((h.total / maxTotal) * 100, h.total > 0 ? 8 : 2);
           const isNow = h.hour === now;
+          const bg = h.failed > 0 ? '#EF4444' : isNow ? '#22C55E' : '#177A3E';
           return (
-            <div key={h.hour} title={`${h.hour}:00 — ${h.total} total (${h.successful} ok, ${h.failed} failed)`}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'default' }}>
-              <div style={{ width: '100%', height: `${heightPct}%`, background: h.failed > 0 ? '#EF4444' : isNow ? '#22C55E' : '#177A3E', borderRadius: '2px 2px 0 0', transition: 'height 0.6s ease', opacity: isNow ? 1 : 0.75 }} />
+            <div
+              key={h.hour}
+              title={`${h.hour}:00 — ${h.total} total (${h.successful} ok, ${h.failed} failed)`}
+              className="flex-1 flex flex-col items-center gap-0.5 cursor-default"
+            >
+              <div
+                className="w-full rounded-t-sm transition-[height] duration-[600ms] ease-in-out"
+                style={{
+                  height: `${heightPct}%`,
+                  background: bg,
+                  opacity: isNow ? 1 : 0.75,
+                }}
+              />
             </div>
           );
         })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+      <div className="flex justify-between mt-1.5">
         {[0, 6, 12, 18, 23].map(h => (
-          <span key={h} style={{ fontSize: '10px', color: '#4A4A42' }}>{h}:00</span>
+          <span key={h} className="text-[10px] text-slate-600">{h}:00</span>
         ))}
       </div>
     </div>
@@ -57,106 +73,126 @@ function LoginMonitorTab() {
     refetchInterval: 30_000,
   });
 
-  if (isLoading) return <div style={{ padding: '40px', color: '#8C8677' }}>Loading login metrics…</div>;
-  if (error) return <div style={{ padding: '40px', color: '#EF4444' }}>Failed to load admin data.</div>;
+  if (isLoading) return <div className="p-10 text-slate-400">Loading login metrics…</div>;
+  if (error) return <div className="p-10 text-red-400">Failed to load admin data.</div>;
 
-  const avgColor = msColor(stats.avgResponseTimeMs24h);
+  const avgColorHex = msColorHex(stats.avgResponseTimeMs24h);
+  const successRateColorHex = stats.successRate24h >= 90 ? '#22C55E' : stats.successRate24h >= 70 ? '#F59E0B' : '#EF4444';
+  const failedColorHex = stats.failedLogins24h > 10 ? '#EF4444' : stats.failedLogins24h > 0 ? '#F59E0B' : '#22C55E';
 
   return (
     <>
-      <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>Last 24 Hours</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-[0.8px] mb-3">Last 24 Hours</p>
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <StatCard label="Total Logins" value={stats.totalLogins24h} sub="authentication attempts" color="#F0EDE8" topBorder="#22C55E" />
-        <StatCard label="Success Rate" value={`${stats.successRate24h}%`} sub={`${stats.successfulLogins24h} successful`}
-          color={stats.successRate24h >= 90 ? '#22C55E' : stats.successRate24h >= 70 ? '#F59E0B' : '#EF4444'}
-          topBorder={stats.successRate24h >= 90 ? '#22C55E' : stats.successRate24h >= 70 ? '#F59E0B' : '#EF4444'} />
-        <StatCard label="Failed Attempts" value={stats.failedLogins24h} sub="invalid credentials"
-          color={stats.failedLogins24h > 10 ? '#EF4444' : stats.failedLogins24h > 0 ? '#F59E0B' : '#22C55E'}
-          topBorder={stats.failedLogins24h > 10 ? '#EF4444' : stats.failedLogins24h > 0 ? '#F59E0B' : '#22C55E'} />
-        <StatCard label="Avg Response" value={`${stats.avgResponseTimeMs24h} ms`}
+        <StatCard
+          label="Success Rate"
+          value={`${stats.successRate24h}%`}
+          sub={`${stats.successfulLogins24h} successful`}
+          color={successRateColorHex}
+          topBorder={successRateColorHex}
+        />
+        <StatCard
+          label="Failed Attempts"
+          value={stats.failedLogins24h}
+          sub="invalid credentials"
+          color={failedColorHex}
+          topBorder={failedColorHex}
+        />
+        <StatCard
+          label="Avg Response"
+          value={`${stats.avgResponseTimeMs24h} ms`}
           sub={`${msLabel(stats.avgResponseTimeMs24h)} · peak ${stats.peakResponseTimeMs24h} ms`}
-          color={avgColor} topBorder={avgColor} />
+          color={avgColorHex}
+          topBorder={avgColorHex}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '20px' }}>7-Day Summary</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className={card}>
+          <h3 className="text-lg text-slate-50 mb-5">7-Day Summary</h3>
+          <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Total', value: stats.totalLogins7d },
               { label: 'Successful', value: stats.successfulLogins7d, color: '#22C55E' },
               { label: 'Failed', value: stats.failedLogins7d, color: stats.failedLogins7d > 0 ? '#EF4444' : '#22C55E' },
               { label: 'Unique Users', value: stats.uniqueUsers7d },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: '#162219', borderRadius: '8px', padding: '14px 16px', border: '1px solid #1F3326' }}>
-                <p style={{ fontSize: '11px', color: '#8C8677', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{label}</p>
-                <p style={{ fontSize: '28px', fontWeight: '700', fontFamily: "'Playfair Display', serif", color: color || '#F0EDE8' }}>{value}</p>
+              <div key={label} className="bg-slate-800 rounded-lg p-3.5 border border-slate-700">
+                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-2">{label}</p>
+                <p className="text-3xl font-bold" style={{ color: color || undefined }}>{value}</p>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ flex: 1, height: '6px', background: '#1F3326', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${stats.successRate7d}%`, background: stats.successRate7d >= 90 ? '#22C55E' : '#F59E0B', borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-[width] duration-[800ms] cubic-bezier-[0.4,0,0.2,1]"
+                style={{
+                  width: `${stats.successRate7d}%`,
+                  background: stats.successRate7d >= 90 ? '#22C55E' : '#F59E0B',
+                }}
+              />
             </div>
-            <span style={{ fontSize: '12px', color: '#8C8677', whiteSpace: 'nowrap' }}>{stats.successRate7d}% success rate (7d)</span>
+            <span className="text-xs text-slate-400 whitespace-nowrap">{stats.successRate7d}% success rate (7d)</span>
           </div>
         </div>
 
-        <div style={S.card}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: '#F0EDE8', marginBottom: '2px' }}>Hourly Activity</h3>
-          <p style={{ fontSize: '12px', color: '#8C8677', marginBottom: '20px' }}>Last 24 hours · UTC · red = failures present</p>
+        <div className={card}>
+          <h3 className="text-lg text-slate-50 mb-0.5">Hourly Activity</h3>
+          <p className="text-xs text-slate-400 mb-5">Last 24 hours · UTC · red = failures present</p>
           <HourlyChart hours={stats.hourlyBreakdown24h} />
-          <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
+          <div className="flex gap-4 mt-3.5">
             {[['#22C55E', 'Successful hour'], ['#EF4444', 'Failures detected'], ['#177A3E', 'Past hours']].map(([color, label]) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: color }} />
-                <span style={{ fontSize: '11px', color: '#8C8677' }}>{label}</span>
+              <div key={label} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} />
+                <span className="text-[11px] text-slate-400">{label}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div style={S.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className={card}>
+        <div className="flex justify-between items-center mb-5">
           <div>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>Recent Login Attempts</h3>
-            <p style={{ fontSize: '12px', color: '#8C8677' }}>Last 100 attempts — newest first</p>
+            <h3 className="text-xl text-slate-50 mb-0.5">Recent Login Attempts</h3>
+            <p className="text-xs text-slate-400">Last 100 attempts — newest first</p>
           </div>
-          <span style={{ background: '#1A2B1F', color: '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #2D4A34' }}>
+          <span className="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
             {stats.recentLogs?.length ?? 0} entries
           </span>
         </div>
         {!stats.recentLogs?.length ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
-            <p style={{ fontSize: '14px' }}>No login attempts recorded yet.</p>
+          <div className="text-center py-10 text-slate-600">
+            <p className="text-sm">No login attempts recorded yet.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
-                <tr>{['Time (UTC)', 'Email', 'Status', 'Role', 'Response', 'IP Address', 'User Agent'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
+                <tr>{['Time (UTC)', 'Email', 'Status', 'Role', 'Response', 'IP Address', 'User Agent'].map(h => <th key={h} className={th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {stats.recentLogs.map((log, i) => {
-                  const color = msColor(log.responseTimeMs);
+                  const msClass = msColor(log.responseTimeMs);
                   return (
-                    <tr key={log.logId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#8C8677', whiteSpace: 'nowrap' }}>
+                    <tr key={log.logId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                      <td className={`${td} font-mono text-xs text-slate-400 whitespace-nowrap`}>
                         {new Date(log.attemptedAt).toLocaleString('en-ZA', { timeZone: 'UTC', hour12: false })}
                       </td>
-                      <td style={{ ...S.td, fontWeight: '600' }}>{log.email}</td>
-                      <td style={S.td}>
+                      <td className={`${td} font-semibold`}>{log.email}</td>
+                      <td className={td}>
                         {log.success
-                          ? <span style={{ background: '#052E16', color: '#22C55E', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>Success</span>
-                          : <span style={{ background: '#450A0A', color: '#EF4444', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }} title={log.failureReason ?? ''}>Failed</span>}
+                          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/25">Success</span>
+                          : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/25" title={log.failureReason ?? ''}>Failed</span>}
                       </td>
-                      <td style={{ ...S.td, color: '#8C8677', fontSize: '12px' }}>{log.role || '—'}</td>
-                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color }}>
-                        {log.responseTimeMs} ms <span style={{ fontSize: '10px', marginLeft: '4px', color: '#4A4A42' }}>({msLabel(log.responseTimeMs)})</span>
+                      <td className={`${td} text-slate-400 text-xs`}>{log.role || '—'}</td>
+                      <td className={`${td} font-mono text-xs ${msClass}`}>
+                        {log.responseTimeMs} ms <span className="text-[10px] ml-1 text-slate-600">({msLabel(log.responseTimeMs)})</span>
                       </td>
-                      <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#8C8677' }}>{log.ipAddress}</td>
-                      <td style={{ ...S.td, fontSize: '12px', color: '#4A4A42', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td className={`${td} font-mono text-xs text-slate-400`}>{log.ipAddress}</td>
+                      <td className={`${td} text-xs text-slate-600 max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap`}>
                         <span title={log.userAgent}>{log.userAgent}</span>
                       </td>
                     </tr>
@@ -190,8 +226,8 @@ function FarmsTab() {
     },
   });
 
-  if (isLoading) return <div style={{ padding: '40px', color: '#8C8677' }}>Loading farms…</div>;
-  if (error) return <div style={{ padding: '40px', color: '#EF4444' }}>Failed to load farms.</div>;
+  if (isLoading) return <div className="p-10 text-slate-400">Loading farms…</div>;
+  if (error) return <div className="p-10 text-red-400">Failed to load farms.</div>;
 
   const total = farms?.length ?? 0;
   const active = farms?.filter(f => f.isActive).length ?? 0;
@@ -199,88 +235,90 @@ function FarmsTab() {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard label="Total Farms" value={total} sub="registered on platform" color="#F0EDE8" topBorder="#22C55E" />
         <StatCard label="Active" value={active} sub="currently operational" color="#22C55E" topBorder="#22C55E" />
-        <StatCard label="Inactive" value={inactive} sub="deactivated by admin" color={inactive > 0 ? '#F59E0B' : '#8C8677'} topBorder={inactive > 0 ? '#F59E0B' : '#2D4A34'} />
+        <StatCard
+          label="Inactive"
+          value={inactive}
+          sub="deactivated by admin"
+          color={inactive > 0 ? '#F59E0B' : '#8C8677'}
+          topBorder={inactive > 0 ? '#F59E0B' : '#2D4A34'}
+        />
       </div>
 
-      <div style={S.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className={card}>
+        <div className="flex justify-between items-center mb-5">
           <div>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#F0EDE8', marginBottom: '2px' }}>All Farms</h3>
-            <p style={{ fontSize: '12px', color: '#8C8677' }}>Click toggle to activate or deactivate a farm</p>
+            <h3 className="text-xl text-slate-50 mb-0.5">All Farms</h3>
+            <p className="text-xs text-slate-400">Click toggle to activate or deactivate a farm</p>
           </div>
-          <span style={{ background: '#1A2B1F', color: '#8C8677', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: '1px solid #2D4A34' }}>
+          <span className="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
             {total} farms
           </span>
         </div>
 
         {!farms?.length ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#4A4A42' }}>
-            <p style={{ fontSize: '14px' }}>No farms registered yet.</p>
+          <div className="text-center py-10 text-slate-600">
+            <p className="text-sm">No farms registered yet.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['Farm', 'Owner', 'Province', 'Type', 'Animals', 'Workers', 'Avg Compliance', 'Registered', 'Status', 'Action'].map(h => (
-                    <th key={h} style={S.th}>{h}</th>
+                    <th key={h} className={th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {farms.map((farm, i) => (
-                  <tr key={farm.farmId} style={{ background: i % 2 === 0 ? '#1A2B1F' : '#162219' }}>
-                    <td style={{ ...S.td, fontWeight: '600' }}>
+                  <tr key={farm.farmId} className={i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}>
+                    <td className={`${td} font-semibold`}>
                       {farm.farmName}
-                      {farm.glnNumber && <div style={{ fontSize: '11px', color: '#4A4A42', marginTop: '2px' }}>GLN: {farm.glnNumber}</div>}
+                      {farm.glnNumber && <div className="text-[11px] text-slate-600 mt-0.5">GLN: {farm.glnNumber}</div>}
                     </td>
-                    <td style={S.td}>
-                      <div style={{ fontWeight: '600' }}>{farm.ownerName}</div>
-                      <div style={{ fontSize: '11px', color: '#4A4A42' }}>{farm.ownerEmail}</div>
+                    <td className={td}>
+                      <div className="font-semibold">{farm.ownerName}</div>
+                      <div className="text-[11px] text-slate-600">{farm.ownerEmail}</div>
                     </td>
-                    <td style={{ ...S.td, color: '#8C8677' }}>{farm.province}</td>
-                    <td style={{ ...S.td, color: '#8C8677' }}>{farm.farmType}</td>
-                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", textAlign: 'center' }}>{farm.animalCount}</td>
-                    <td style={{ ...S.td, fontFamily: "'JetBrains Mono', monospace", textAlign: 'center' }}>{farm.workerCount}</td>
-                    <td style={S.td}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, height: '4px', background: '#1F3326', borderRadius: '2px', overflow: 'hidden', minWidth: '60px' }}>
-                          <div style={{ height: '100%', width: `${farm.averageComplianceScore}%`, background: scoreColor(farm.averageComplianceScore), borderRadius: '2px' }} />
+                    <td className={`${td} text-slate-400`}>{farm.province}</td>
+                    <td className={`${td} text-slate-400`}>{farm.farmType}</td>
+                    <td className={`${td} font-mono text-center`}>{farm.animalCount}</td>
+                    <td className={`${td} font-mono text-center`}>{farm.workerCount}</td>
+                    <td className={td}>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-slate-700 rounded-sm overflow-hidden min-w-[60px]">
+                          <div
+                            className="h-full rounded-sm"
+                            style={{ width: `${farm.averageComplianceScore}%`, background: scoreColor(farm.averageComplianceScore) }}
+                          />
                         </div>
-                        <span style={{ fontSize: '12px', color: scoreColor(farm.averageComplianceScore), fontWeight: '600', whiteSpace: 'nowrap' }}>
+                        <span className={`text-xs font-semibold whitespace-nowrap ${scoreColorClass(farm.averageComplianceScore)}`}>
                           {farm.averageComplianceScore}%
                         </span>
                       </div>
                     </td>
-                    <td style={{ ...S.td, fontSize: '12px', color: '#8C8677', whiteSpace: 'nowrap' }}>
+                    <td className={`${td} text-xs text-slate-400 whitespace-nowrap`}>
                       {new Date(farm.createdAt).toLocaleDateString('en-ZA')}
                     </td>
-                    <td style={S.td}>
-                      <span style={{
-                        background: farm.isActive ? '#052E16' : '#1C1008',
-                        color: farm.isActive ? '#22C55E' : '#F59E0B',
-                        padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700'
-                      }}>
-                        {farm.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className={td}>
+                      {farm.isActive
+                        ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/25">Active</span>
+                        : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25">Inactive</span>}
                     </td>
-                    <td style={S.td}>
+                    <td className={td}>
                       <button
                         onClick={() => toggleMutation.mutate(farm.farmId)}
                         disabled={toggling === farm.farmId}
-                        style={{
-                          background: farm.isActive ? '#450A0A' : '#052E16',
-                          color: farm.isActive ? '#EF4444' : '#22C55E',
-                          border: `1px solid ${farm.isActive ? '#7F1D1D' : '#166534'}`,
-                          borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: '600',
-                          cursor: toggling === farm.farmId ? 'wait' : 'pointer',
-                          opacity: toggling === farm.farmId ? 0.6 : 1,
-                          transition: 'opacity 0.2s',
-                          fontFamily: "'DM Sans', sans-serif",
-                        }}
+                        className={[
+                          'px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-opacity duration-200',
+                          farm.isActive
+                            ? 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20'
+                            : 'bg-teal-500/10 text-teal-400 border-teal-500/25 hover:bg-teal-500/20',
+                          toggling === farm.farmId ? 'opacity-60 cursor-wait' : 'cursor-pointer',
+                        ].join(' ')}
                       >
                         {toggling === farm.farmId ? '…' : farm.isActive ? 'Deactivate' : 'Activate'}
                       </button>
@@ -305,26 +343,22 @@ export default function AdminPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8' }}>
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: '700', color: '#F0EDE8', marginBottom: '4px' }}>
-          Admin Panel
-        </h1>
-        <p style={{ color: '#8C8677', fontSize: '14px' }}>Platform oversight and farm management</p>
+    <div className="text-slate-50">
+      <div className="mb-7">
+        <h1 className="text-4xl font-bold text-slate-50 mb-1">Admin Panel</h1>
+        <p className="text-slate-400 text-sm">Platform oversight and farm management</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '28px', background: '#0B1F14', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
+      <div className="flex gap-1 mb-7 bg-slate-900 rounded-[10px] p-1 w-fit">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '8px 20px', borderRadius: '7px', border: 'none', cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif", fontSize: '13px', fontWeight: '600',
-              background: activeTab === tab.id ? '#22C55E' : 'transparent',
-              color: activeTab === tab.id ? '#0B1F14' : '#8C8677',
-              transition: 'all 0.15s',
-            }}
+            className={
+              activeTab === tab.id
+                ? 'px-4 py-2 rounded-lg text-sm font-semibold bg-teal-500 text-slate-900'
+                : 'px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-300'
+            }
           >
             {tab.label}
           </button>
